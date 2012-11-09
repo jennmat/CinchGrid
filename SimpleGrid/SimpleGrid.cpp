@@ -189,6 +189,59 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    return TRUE;
 }
 
+
+void DrawHeader(HDC hdc){
+	HPEN headerPen = CreatePen(PS_SOLID, 1, RGB(165, 172, 181));
+		SelectObject(hdc, headerPen);	
+		
+
+	MoveToEx(hdc, 0, 0, NULL);
+	LineTo(hdc, totalWidth, 0);
+	MoveToEx(hdc, 0, ROW_SPACING, NULL);
+	LineTo(hdc, totalWidth, ROW_SPACING);
+
+	int j = 0;
+	int left = 0;
+	for(int l=0; l<numColumns; l++){
+		GridColumn* col = columns[l];
+		int i = col->getWidth();
+		//Rectangle(hdc, i, 0, i + COL_SPACING, ROW_SPACING);
+		MoveToEx(hdc, left+i, 0, NULL);
+		LineTo(hdc, left+i, ROW_SPACING);
+		TRIVERTEX vertex[2] ;
+		vertex[0].x     = left+1;
+		vertex[0].y     = 1;
+		vertex[0].Red   = 0xf400;
+		vertex[0].Green = 0xf700;
+		vertex[0].Blue  = 0xf900;
+		vertex[0].Alpha = 0x0000;
+
+		vertex[1].x     = left+i;
+		vertex[1].y     = ROW_SPACING; 
+		vertex[1].Red   = 0xef00;
+		vertex[1].Green = 0xf200;
+		vertex[1].Blue  = 0xf600;
+		vertex[1].Alpha = 0x0000;
+
+		GRADIENT_RECT r;
+		r.UpperLeft = 0;
+		r.LowerRight = 1;
+
+		GradientFill(hdc, vertex, 2, &r, 1, GRADIENT_FILL_RECT_V);
+
+		RECT headerText;
+		headerText.left = left + 6;
+		headerText.top = 1;
+		headerText.bottom = ROW_SPACING;
+		headerText.right = left + i;
+
+		DrawText(hdc, col->getHeader(), -1, &headerText, DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS);
+			
+		left += i;
+		j++;
+	}
+}
+
 void DrawTextForRow(HDC hdc, RECT client, int row){
 	int left = 0;
 	int top = ROW_SPACING * (row+1) + 1;
@@ -378,67 +431,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		//FillRect(hdc, &rect, CreateSolidBrush(RGB(120,120,120)));
 		
 		
-
 		HFONT hFont = delegate->getFont();
 		SelectObject(hdc, hFont);
 		SetBkMode(hdc, TRANSPARENT);
 
-		
-		HPEN headerPen = CreatePen(PS_SOLID, 1, RGB(165, 172, 181));
-		SelectObject(hdc, headerPen);	
+		if ( !delegate->stickyHeaders() ){
+			DrawHeader(hdc);
+		}
 		
 		totalWidth = 0;
 		for(int i=0; i<numColumns; i++){
 			totalWidth += columns[i]->getWidth();
 		}
 
-		MoveToEx(hdc, 0, 0, NULL);
-		LineTo(hdc, totalWidth, 0);
-		MoveToEx(hdc, 0, ROW_SPACING, NULL);
-		LineTo(hdc, totalWidth, ROW_SPACING);
-
-		int j = 0;
-		int left = 0;
-		for(int l=0; l<numColumns; l++){
-			GridColumn* col = columns[l];
-			int i = col->getWidth();
-			//Rectangle(hdc, i, 0, i + COL_SPACING, ROW_SPACING);
-			MoveToEx(hdc, left+i, 0, NULL);
-			LineTo(hdc, left+i, ROW_SPACING);
-			TRIVERTEX vertex[2] ;
-			vertex[0].x     = left+1;
-			vertex[0].y     = 1;
-			vertex[0].Red   = 0xf400;
-			vertex[0].Green = 0xf700;
-			vertex[0].Blue  = 0xf900;
-			vertex[0].Alpha = 0x0000;
-
-			vertex[1].x     = left+i;
-			vertex[1].y     = ROW_SPACING; 
-			vertex[1].Red   = 0xef00;
-			vertex[1].Green = 0xf200;
-			vertex[1].Blue  = 0xf600;
-			vertex[1].Alpha = 0x0000;
-
-			GRADIENT_RECT r;
-			r.UpperLeft = 0;
-			r.LowerRight = 1;
-
-			GradientFill(hdc, vertex, 2, &r, 1, GRADIENT_FILL_RECT_V);
-
-			RECT headerText;
-			headerText.left = left + 6;
-			headerText.top = 1;
-			headerText.bottom = ROW_SPACING;
-			headerText.right = left + i;
-
-			DrawText(hdc, col->getHeader(), -1, &headerText, DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS);
-			
-			left += i;
-			j++;
-		}
-
-		int totalColumnWidth = left;
 
 		HPEN hBluePen = CreatePen(PS_SOLID, 1, RGB(210, 210, 210));
 		SelectObject(hdc, hBluePen);
@@ -455,7 +460,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 		}
 
-		left = 0;
+		int left = 0;
 		for(int i=0; i<numColumns; i++){
 			GridColumn* col = columns[i];
 			MoveToEx(hdc, left + col->getWidth(), ROW_SPACING+1, NULL);
@@ -467,7 +472,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			overflowX = true;
 		}
 
-		j = 0;
+		int j = 0;
 		left = 0;
 		int top = ROW_SPACING;
 		for(int row = 0; row<delegate->totalRows(); row++){
@@ -495,7 +500,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			HBRUSH brush = CreateSolidBrush(RGB(167,205,240));
 			RECT row;
 			row.left = 0;
-			row.right = totalColumnWidth;
+			row.right = totalWidth;
 			row.top = activeRow * ROW_SPACING;
 			row.bottom = row.top + ROW_SPACING;
 			FillRect(hdc, &row, brush);
@@ -504,6 +509,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 
 		//BitBlt(h, 0, 0, window.right-window.left, window.bottom-window.top, hdc, 0, 0, SRCCOPY);
+		
+		if ( delegate->stickyHeaders() ){
+			SetWindowOrgEx(hdc, origin.x, origin.y, 0);
+			OffsetRect(&ps.rcPaint, -scrollOffsetX, -scrollOffsetY);
+			DrawHeader(hdc);	
+		}
+
 
 		EndPaint(hWnd, &ps);
 
