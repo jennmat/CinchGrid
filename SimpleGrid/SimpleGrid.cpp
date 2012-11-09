@@ -27,12 +27,15 @@ int activeCol = -1;
 int scrollOffsetX = 0;
 int scrollOffsetY = 0;
 
+
 bool overflowX = 0;
 bool overflowY = 0;
 
 int totalWidth = 0;
 
 bool draggingHeader = false;
+int draggedXPos = 0;
+
 int activelyDraggedColumn = -1;
 
 void addColumn(wchar_t * header, int width) {
@@ -189,10 +192,20 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    return TRUE;
 }
 
+void DrawHeaderDragGuideline(HDC hdc, RECT client)
+{
+	if ( draggingHeader == true ){
+		HPEN headerPen = CreatePen(PS_SOLID, 1, RGB(180, 180, 180));
+		SelectObject(hdc, headerPen);	
+	
+		MoveToEx(hdc, draggedXPos, 0, NULL);
+		LineTo(hdc, draggedXPos, client.bottom);
+	}
+}
 
 void DrawHeader(HDC hdc){
 	HPEN headerPen = CreatePen(PS_SOLID, 1, RGB(165, 172, 181));
-		SelectObject(hdc, headerPen);	
+	SelectObject(hdc, headerPen);	
 		
 
 	MoveToEx(hdc, 0, 0, NULL);
@@ -295,9 +308,26 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				accum += columns[i]->getWidth();
 			}
 			if ( mouseXPos - accum > 10 ){
-				columns[activelyDraggedColumn]->setWidth(mouseXPos - accum);	
 				//InvalidateRect(hWnd, NULL, true);
+				RECT client;
+				GetClientRect(hWnd, &client);
 
+				RECT invalidate;
+				invalidate.left = draggedXPos - 1;
+				invalidate.right = draggedXPos + 1;
+				invalidate.top = 0;
+				invalidate.bottom = client.bottom;
+
+				InvalidateRect(hWnd, &invalidate, true);
+
+				draggedXPos = mouseXPos;
+				
+				invalidate.left = mouseXPos - 1;
+				invalidate.right = mouseXPos + 1;
+				invalidate.top = 0;
+				invalidate.bottom = client.bottom;
+
+				InvalidateRect(hWnd, &invalidate, true);
 			}
 		}
 		if ( mouseYPos < ROW_SPACING ){
@@ -314,6 +344,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 	case WM_LBUTTONUP:
 		if ( draggingHeader == true ){
+			int accum = 0;
+			int mouseXPos = GET_X_LPARAM(lParam); 
+			for(int i=0; i<activelyDraggedColumn; i++){
+				accum += columns[i]->getWidth();
+			}
+
+			columns[activelyDraggedColumn]->setWidth(mouseXPos - accum);	
 			InvalidateRect(hWnd, NULL, true);
 		}
 		draggingHeader = false;
@@ -507,6 +544,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			Rectangle(hdc, row.left, row.top, row.right, row.bottom);
 			DrawTextForRow(hdc, ps.rcPaint, activeRow-1);
 		}
+
+		DrawHeaderDragGuideline(hdc, client);
 
 		//BitBlt(h, 0, 0, window.right-window.left, window.bottom-window.top, hdc, 0, 0, SRCCOPY);
 		
