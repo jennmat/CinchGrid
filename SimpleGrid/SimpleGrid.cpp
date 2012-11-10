@@ -31,11 +31,14 @@ bool overflowX = 0;
 bool overflowY = 0;
 
 int totalWidth = 0;
+int totalHeight = 0;
 
 bool draggingHeader = false;
 int draggedXPos = 0;
 
 int activelyDraggedColumn = -1;
+
+HPEN headerPen;
 
 void addColumn(wchar_t * header, int width) {
 	columns[numColumns] = new GridColumn(header, width);
@@ -166,10 +169,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW | WS_HSCROLL | WS_VSCROLL,
       CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
 
-   if (!hWnd)
-   {
-      return FALSE;
-   }
+	if (!hWnd)
+	{
+		return FALSE;
+	}
 	
    //SetScrollRange(hWnd, SB_VERT, 0, 1, true);
 	//SetScrollRange(hWnd, SB_HORZ, 0, 1, true);
@@ -177,11 +180,41 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	ShowScrollBar(hWnd, SB_BOTH, false);
 
-   delegate = new HardCodedDelegate();
+	delegate = new HardCodedDelegate();
 
-   for(int i=0; i<delegate->totalColumns(); i++){
-	   addColumn(delegate->headerContent(i), delegate->columnWidth(i));
-   }
+	for(int i=0; i<delegate->totalColumns(); i++){
+		addColumn(delegate->headerContent(i), delegate->columnWidth(i));
+		totalWidth += delegate->columnWidth(i);
+	}
+
+	totalHeight = (delegate->totalRows() + 1) * delegate->rowHeight();
+
+	RECT client;
+	GetClientRect(hWnd, &client);
+
+	overflowY = false;
+	
+	overflowX = false;
+	for(int i=1; i<delegate->totalRows()+2; i+=1){
+		if ( i * delegate->rowHeight() > client.bottom ){
+			//overflow
+			overflowY = true;
+			break;
+		}
+	}
+
+	int left = 0;
+	for(int i=0; i<numColumns; i++){
+		GridColumn* col = columns[i];
+		left += col->getWidth();
+	}
+		 
+	if ( left > client.right ){
+		overflowX = true;
+	}
+
+	headerPen = CreatePen(PS_SOLID, 1, RGB(210, 210, 210));
+	
 
    //SetScroll(hWnd);
    ShowWindow(hWnd, nCmdShow);
@@ -274,6 +307,8 @@ void DrawHeader(HDC hdc, RECT client){
 
 void DrawVerticalGridlines(HDC hdc, RECT client)
 {
+	SelectObject(hdc, headerPen);
+
 	if ( delegate->drawVerticalGridlines() ){
 		int left = 0;
 		for(int i=0; i<numColumns; i++){
@@ -282,6 +317,9 @@ void DrawVerticalGridlines(HDC hdc, RECT client)
 			LineTo(hdc, left + col->getWidth(), (delegate->totalRows()+1)*delegate->rowHeight());
 			left += col->getWidth();
 		}
+	} else {
+		MoveToEx(hdc, totalWidth, 0, NULL);
+		LineTo(hdc, totalWidth, totalHeight);
 	}
 
 }
@@ -293,6 +331,10 @@ void DrawHorizontalGridlines(HDC hdc, RECT client)
 			MoveToEx(hdc, 0, i*delegate->rowHeight(), NULL);
 			LineTo(hdc, totalWidth, i*delegate->rowHeight());
 		}
+	} else {
+		//Always draw bottom gridline
+		MoveToEx(hdc, 0, totalHeight, NULL);
+		LineTo(hdc, totalWidth, totalHeight);
 	}
 }
 
@@ -504,82 +546,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 	case WM_SIZE:
-		SetScroll(hWnd);
-		break;
-	case WM_PAINT:
-		{
-		RECT window;
-		GetWindowRect(hWnd, &window);
 		RECT client;
 		GetClientRect(hWnd, &client);
-		
-		hdc = BeginPaint(hWnd, &ps);
-		
-		
-		//HDC hdc;
-		//HBITMAP bitmap;
-		//hdc = CreateCompatibleDC(h);
-		//bitmap = CreateCompatibleBitmap(hdc, window.right-window.left, window.bottom-window.top);
-		//SelectObject(hdc, bitmap);
-		
-		POINT origin;
-		GetWindowOrgEx(hdc, &origin);
-		SetWindowOrgEx(hdc, origin.x + scrollOffsetX, origin.y + scrollOffsetY, 0);
-
-		OffsetRect(&ps.rcPaint, scrollOffsetX, scrollOffsetY);
-
-
-		RECT rect;
-		GetClientRect(hWnd, &rect);
-		FillRect(hdc, &rect, CreateSolidBrush(RGB(255,255,255)));
-		
-		HFONT hFont = delegate->getFont();
-		SelectObject(hdc, hFont);
-		SetBkMode(hdc, TRANSPARENT);
-
-		totalWidth = 0;
-		for(int i=0; i<numColumns; i++){
-			totalWidth += columns[i]->getWidth();
-		}
-
-
-		HPEN hBluePen = CreatePen(PS_SOLID, 1, RGB(210, 210, 210));
-		SelectObject(hdc, hBluePen);
-
-		overflowY = false;
-		overflowX = false;
-		for(int i=1; i<delegate->totalRows()+2; i+=1){
-			if ( i * delegate->rowHeight() > ps.rcPaint.bottom ){
-				//overflow
-				overflowY = true;
-				break;
-			}
-		}
-
-		int left = 0;
-		for(int i=0; i<numColumns; i++){
-			GridColumn* col = columns[i];
-			left += col->getWidth();
-		}
-		 
-		if ( left > client.right - client.left ){
+		if( totalWidth > client.right ){
 			overflowX = true;
 		}
-
-		DrawVerticalGridlines(hdc, client);
-		DrawHorizontalGridlines(hdc, client);
-		DrawCellText(hdc, ps.rcPaint);
-
-		DrawActiveRow(hdc, ps.rcPaint);
-		DrawHeaderDragGuideline(hdc, client);
-
-		
-		DrawHeader(hdc, ps.rcPaint);	
-		
-		//BitBlt(h, 0, 0, window.right-window.left, window.bottom-window.top, hdc, 0, 0, SRCCOPY);
-		
-		EndPaint(hWnd, &ps);
-
+		if ( totalHeight > client.bottom ){
+			overflowY = true;
+		}
 		if ( overflowX || scrollOffsetX > 0){
 			ShowScrollBar(hWnd, SB_HORZ, true);
 		} else {
@@ -590,6 +564,38 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		} else {
 			ShowScrollBar(hWnd, SB_VERT, false);
 		}
+
+		SetScroll(hWnd);
+		break;
+	case WM_PAINT:
+		{
+		
+		hdc = BeginPaint(hWnd, &ps);
+		
+		POINT origin;
+		GetWindowOrgEx(hdc, &origin);
+		SetWindowOrgEx(hdc, origin.x + scrollOffsetX, origin.y + scrollOffsetY, 0);
+
+		OffsetRect(&ps.rcPaint, scrollOffsetX, scrollOffsetY);
+
+		HFONT hFont = delegate->getFont();
+		SelectObject(hdc, hFont);
+		SetBkMode(hdc, TRANSPARENT);
+
+		
+		DrawVerticalGridlines(hdc, ps.rcPaint);
+		DrawHorizontalGridlines(hdc, ps.rcPaint);
+		DrawCellText(hdc, ps.rcPaint);
+
+		DrawActiveRow(hdc, ps.rcPaint);
+		DrawHeaderDragGuideline(hdc, ps.rcPaint);
+
+		
+		DrawHeader(hdc, ps.rcPaint);	
+		
+		//BitBlt(h, 0, 0, window.right-window.left, window.bottom-window.top, hdc, 0, 0, SRCCOPY);
+		
+		EndPaint(hWnd, &ps);
 
 		SetWindowOrgEx(hdc, origin.x, origin.y, 0);
 		}

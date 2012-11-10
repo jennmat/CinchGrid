@@ -8,7 +8,7 @@ int HardCodedDelegate::totalColumns(){
 }
 
 int HardCodedDelegate::totalRows(){
-	return 90;
+	return 15;
 }
 
 int HardCodedDelegate::columnWidth(int column){
@@ -42,7 +42,7 @@ wchar_t* HardCodedDelegate::cellContent(int row, int col) {
 	
 	if( col == 1 ){
 		return TEXT("10/22/2012");
-	} 
+	}
 	return TEXT("Random Text");
 }
 
@@ -52,11 +52,11 @@ HFONT HardCodedDelegate::getFont(){
 }
 
 bool HardCodedDelegate::drawHorizontalGridlines(){
-	return false;
+	return true;
 }
 
 bool HardCodedDelegate::drawVerticalGridlines(){
-	return true;
+	return false;
 }
 
 int HardCodedDelegate::rowHeight(){
