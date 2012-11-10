@@ -8,7 +8,7 @@ int HardCodedDelegate::totalColumns(){
 }
 
 int HardCodedDelegate::totalRows(){
-	return 100;
+	return 90;
 }
 
 int HardCodedDelegate::columnWidth(int column){
@@ -60,5 +60,6 @@ bool HardCodedDelegate::drawVerticalGridlines(){
 }
 
 int HardCodedDelegate::rowHeight(){
-	return 25;
+	return 32;
 }
+

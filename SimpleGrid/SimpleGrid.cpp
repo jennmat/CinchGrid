@@ -202,7 +202,17 @@ void DrawHeaderDragGuideline(HDC hdc, RECT client)
 	}
 }
 
-void DrawHeader(HDC hdc){
+void DrawHeader(HDC hdc, RECT client){
+
+	
+	if ( delegate->stickyHeaders() ){
+		POINT origin;
+		GetWindowOrgEx(hdc, &origin);
+		SetWindowOrgEx(hdc, origin.x - scrollOffsetX, origin.y - scrollOffsetY, 0);
+		OffsetRect(&client, -scrollOffsetX, -scrollOffsetY);
+	}
+
+
 	HPEN headerPen = CreatePen(PS_SOLID, 1, RGB(165, 172, 181));
 	SelectObject(hdc, headerPen);	
 		
@@ -252,6 +262,14 @@ void DrawHeader(HDC hdc){
 		left += i;
 		j++;
 	}
+
+	if ( delegate->stickyHeaders() ){
+		POINT origin;
+		GetWindowOrgEx(hdc, &origin);
+		SetWindowOrgEx(hdc, origin.x + scrollOffsetX, origin.y + scrollOffsetY, 0);
+		OffsetRect(&client, scrollOffsetX, scrollOffsetY);
+	}
+
 }
 
 void DrawVerticalGridlines(HDC hdc, RECT client)
@@ -297,6 +315,39 @@ void DrawTextForRow(HDC hdc, RECT client, int row){
 		}
 	}
 
+}
+
+void DrawActiveRow(HDC hdc, RECT client)
+{
+	if ( activeRow >= 1){
+			
+		LOGBRUSH lb = {BS_SOLID, RGB(100, 100, 100), 0}; 
+		HPEN activeCellPen = ExtCreatePen(PS_COSMETIC | PS_ALTERNATE | PS_ENDCAP_SQUARE | PS_JOIN_ROUND, 1, &lb, 0, NULL);
+
+		SelectObject(hdc, activeCellPen);
+		SelectObject(hdc,GetStockObject(NULL_BRUSH));
+		HBRUSH brush = CreateSolidBrush(RGB(167,205,240));
+		RECT row;
+		row.left = 0;
+		row.right = totalWidth;
+		row.top = activeRow * delegate->rowHeight();
+		row.bottom = row.top + delegate->rowHeight();
+		FillRect(hdc, &row, brush);
+		Rectangle(hdc, row.left, row.top, row.right, row.bottom);
+		DrawTextForRow(hdc, client, activeRow-1);
+	}
+}
+
+void DrawCellText(HDC hdc, RECT client)
+{
+	int j = 0;
+	int left = 0;
+	int top = delegate->rowHeight();
+	for(int row = 0; row<delegate->totalRows(); row++){
+		left = 0;
+		DrawTextForRow(hdc, client, row);
+		top += delegate->rowHeight();
+	}
 }
 
 //
@@ -481,24 +532,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		RECT rect;
 		GetClientRect(hWnd, &rect);
 		FillRect(hdc, &rect, CreateSolidBrush(RGB(255,255,255)));
-		// TODO: Add any drawing code here...
-		
-		//RECT rect;
-		//rect.left = 0;
-		//rect.right = window.right - window.left;
-		//rect.top = 0;
-		//rect.bottom = delegate->rowHeight();
-		//FillRect(hdc, &rect, CreateSolidBrush(RGB(120,120,120)));
-		
 		
 		HFONT hFont = delegate->getFont();
 		SelectObject(hdc, hFont);
 		SetBkMode(hdc, TRANSPARENT);
 
-		if ( !delegate->stickyHeaders() ){
-			DrawHeader(hdc);
-		}
-		
 		totalWidth = 0;
 		for(int i=0; i<numColumns; i++){
 			totalWidth += columns[i]->getWidth();
@@ -523,62 +561,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			GridColumn* col = columns[i];
 			left += col->getWidth();
 		}
-
+		 
 		if ( left > client.right - client.left ){
 			overflowX = true;
 		}
 
 		DrawVerticalGridlines(hdc, client);
 		DrawHorizontalGridlines(hdc, client);
+		DrawCellText(hdc, ps.rcPaint);
 
-
-		int j = 0;
-		left = 0;
-		int top = delegate->rowHeight();
-		for(int row = 0; row<delegate->totalRows(); row++){
-			left = 0;
-			DrawTextForRow(hdc, ps.rcPaint, row);
-			top += delegate->rowHeight();
-
-		}
-
-		
-		if ( activeRow >= 1){
-			
-			LOGBRUSH lb = {BS_SOLID, RGB(100, 100, 100), 0}; 
-			HPEN activeCellPen = ExtCreatePen(PS_COSMETIC | PS_ALTERNATE | PS_ENDCAP_SQUARE | PS_JOIN_ROUND, 1, &lb, 0, NULL);
-
-			SelectObject(hdc, activeCellPen);
-			SelectObject(hdc,GetStockObject(NULL_BRUSH));
-			/*
-			int accum = 0;
-			for(int i=0; i<activeCol; i++){
-				accum += columns[i]->getWidth();
-			}
-			int cx = accum + 1 + columns[activeCol]->getWidth();
-			Rectangle(hdc, accum + 1 , activeRow * delegate->rowHeight() +1 , cx, (activeRow + 1) * delegate->rowHeight());*/
-			HBRUSH brush = CreateSolidBrush(RGB(167,205,240));
-			RECT row;
-			row.left = 0;
-			row.right = totalWidth;
-			row.top = activeRow * delegate->rowHeight();
-			row.bottom = row.top + delegate->rowHeight();
-			FillRect(hdc, &row, brush);
-			Rectangle(hdc, row.left, row.top, row.right, row.bottom);
-			DrawTextForRow(hdc, ps.rcPaint, activeRow-1);
-		}
-
+		DrawActiveRow(hdc, ps.rcPaint);
 		DrawHeaderDragGuideline(hdc, client);
 
+		
+		DrawHeader(hdc, ps.rcPaint);	
+		
 		//BitBlt(h, 0, 0, window.right-window.left, window.bottom-window.top, hdc, 0, 0, SRCCOPY);
 		
-		if ( delegate->stickyHeaders() ){
-			SetWindowOrgEx(hdc, origin.x, origin.y, 0);
-			OffsetRect(&ps.rcPaint, -scrollOffsetX, -scrollOffsetY);
-			DrawHeader(hdc);	
-		}
-
-
 		EndPaint(hWnd, &ps);
 
 		if ( overflowX || scrollOffsetX > 0){
