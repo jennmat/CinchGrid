@@ -25,9 +25,7 @@ wchar_t* HardCodedDelegate::headerContent(int col) {
 	if ( col == 1 ){
 		return TEXT("Date");
 	}
-	if ( col == 2 ){
-		return TEXT("Text");
-	}
+	return TEXT("Text");
 }
 
 bool HardCodedDelegate::stickyHeaders(){
@@ -45,12 +43,22 @@ wchar_t* HardCodedDelegate::cellContent(int row, int col) {
 	if( col == 1 ){
 		return TEXT("10/22/2012");
 	} 
-	if ( col == 2 ){
-		return TEXT("Random Text");
-	}
+	return TEXT("Random Text");
 }
 
 HFONT HardCodedDelegate::getFont(){
 	HFONT hFont=CreateFont(18,0,0,0,0,0,0,0,0,0,0,0,0,TEXT("MS Shell Dlg"));
 	return hFont;
+}
+
+bool HardCodedDelegate::drawHorizontalGridlines(){
+	return false;
+}
+
+bool HardCodedDelegate::drawVerticalGridlines(){
+	return true;
+}
+
+int HardCodedDelegate::rowHeight(){
+	return 25;
 }

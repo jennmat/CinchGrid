@@ -7,7 +7,6 @@
 
 #define MAX_LOADSTRING 100
 
-#define ROW_SPACING 25
 #define COL_SPACING 100
 
 // Global Variables:
@@ -130,7 +129,7 @@ void SetScroll(HWND hWnd)
     si.cbSize = sizeof(si);
     si.fMask  = SIF_RANGE | SIF_PAGE;
     si.nMin   = 0;
-	si.nMax   = delegate->totalRows() * ROW_SPACING;
+	si.nMax   = delegate->totalRows() * delegate->rowHeight();
 	si.nPage  = client.bottom;
 	SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
 
@@ -210,30 +209,30 @@ void DrawHeader(HDC hdc){
 
 	MoveToEx(hdc, 0, 0, NULL);
 	LineTo(hdc, totalWidth, 0);
-	MoveToEx(hdc, 0, ROW_SPACING, NULL);
-	LineTo(hdc, totalWidth, ROW_SPACING);
+	MoveToEx(hdc, 0, delegate->rowHeight(), NULL);
+	LineTo(hdc, totalWidth, delegate->rowHeight());
 
 	int j = 0;
 	int left = 0;
 	for(int l=0; l<numColumns; l++){
 		GridColumn* col = columns[l];
 		int i = col->getWidth();
-		//Rectangle(hdc, i, 0, i + COL_SPACING, ROW_SPACING);
+		//Rectangle(hdc, i, 0, i + COL_SPACING, delegate->rowHeight());
 		MoveToEx(hdc, left+i, 0, NULL);
-		LineTo(hdc, left+i, ROW_SPACING);
+		LineTo(hdc, left+i, delegate->rowHeight());
 		TRIVERTEX vertex[2] ;
 		vertex[0].x     = left+1;
 		vertex[0].y     = 1;
-		vertex[0].Red   = 0xf400;
-		vertex[0].Green = 0xf700;
-		vertex[0].Blue  = 0xf900;
+		vertex[0].Red   = 0xf000;
+		vertex[0].Green = 0xf000;
+		vertex[0].Blue  = 0xf000;
 		vertex[0].Alpha = 0x0000;
 
 		vertex[1].x     = left+i;
-		vertex[1].y     = ROW_SPACING; 
-		vertex[1].Red   = 0xef00;
-		vertex[1].Green = 0xf200;
-		vertex[1].Blue  = 0xf600;
+		vertex[1].y     = delegate->rowHeight(); 
+		vertex[1].Red   = 0xe000;
+		vertex[1].Green = 0xe000;
+		vertex[1].Blue  = 0xe000;
 		vertex[1].Alpha = 0x0000;
 
 		GRADIENT_RECT r;
@@ -245,7 +244,7 @@ void DrawHeader(HDC hdc){
 		RECT headerText;
 		headerText.left = left + 6;
 		headerText.top = 1;
-		headerText.bottom = ROW_SPACING;
+		headerText.bottom = delegate->rowHeight();
 		headerText.right = left + i;
 
 		DrawText(hdc, col->getHeader(), -1, &headerText, DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS);
@@ -255,9 +254,33 @@ void DrawHeader(HDC hdc){
 	}
 }
 
+void DrawVerticalGridlines(HDC hdc, RECT client)
+{
+	if ( delegate->drawVerticalGridlines() ){
+		int left = 0;
+		for(int i=0; i<numColumns; i++){
+			GridColumn* col = columns[i];
+			MoveToEx(hdc, left + col->getWidth(), delegate->rowHeight()+1, NULL);
+			LineTo(hdc, left + col->getWidth(), (delegate->totalRows()+1)*delegate->rowHeight());
+			left += col->getWidth();
+		}
+	}
+
+}
+
+void DrawHorizontalGridlines(HDC hdc, RECT client)
+{
+	if( delegate->drawHorizontalGridlines() ){
+		for(int i=1; i<delegate->totalRows()+2; i+=1){
+			MoveToEx(hdc, 0, i*delegate->rowHeight(), NULL);
+			LineTo(hdc, totalWidth, i*delegate->rowHeight());
+		}
+	}
+}
+
 void DrawTextForRow(HDC hdc, RECT client, int row){
 	int left = 0;
-	int top = ROW_SPACING * (row+1) + 1;
+	int top = delegate->rowHeight() * (row+1) + 1;
 	if ( top < client.bottom ){
 		for(int col = 0; col<delegate->totalColumns(); col++){
 			GridColumn* c = columns[col];
@@ -265,7 +288,7 @@ void DrawTextForRow(HDC hdc, RECT client, int row){
 			textRect.left = left+7;
 			textRect.right = left + c->getWidth();
 			textRect.top = top;
-			textRect.bottom = top + ROW_SPACING;
+			textRect.bottom = top + delegate->rowHeight();
 			left += c->getWidth();
 			
 			if ( textRect.left < client.right ) {
@@ -330,7 +353,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				InvalidateRect(hWnd, &invalidate, true);
 			}
 		}
-		if ( mouseYPos < ROW_SPACING ){
+		if ( mouseYPos < delegate->rowHeight() ){
 			int accum = 0;
 			for(int i=0; i<numColumns; i++){
 				accum += columns[i]->getWidth();
@@ -361,14 +384,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		RECT repaint;
 		repaint.left = activeCol * COL_SPACING - 2;
 		repaint.right = repaint.left + COL_SPACING + 4;
-		repaint.top = activeRow * ROW_SPACING - 2;
-		repaint.bottom = repaint.top + ROW_SPACING + 4;
+		repaint.top = activeRow * delegate->rowHeight() - 2;
+		repaint.bottom = repaint.top + delegate->rowHeight() + 4;
 		//InvalidateRect(hWnd, NULL, true);
 
 		int xPos = GET_X_LPARAM(lParam); 
 		int yPos = GET_Y_LPARAM(lParam); 
 
-		if ( yPos < ROW_SPACING ){
+		if ( yPos < delegate->rowHeight() ){
 			int accum = 0;
 			for(int i=0; i<numColumns; i++){
 				accum += columns[i]->getWidth();
@@ -387,24 +410,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					break;
 				}
 			}
-			if ( (yPos + scrollOffsetY) / ROW_SPACING < delegate->totalRows() + 1 ){
+			if ( (yPos + scrollOffsetY) / delegate->rowHeight() < delegate->totalRows() + 1 ){
 				int previousActiveRow = activeRow;
-				activeRow = (yPos + scrollOffsetY) / ROW_SPACING;
+				activeRow = (yPos + scrollOffsetY) / delegate->rowHeight();
 				RECT client;
 				GetClientRect(hWnd, &client);
 
 				RECT r2;
 				r2.left = 0;
 				r2.right = client.right;
-				r2.top = previousActiveRow * ROW_SPACING - 2 - scrollOffsetY;
-				r2.bottom = repaint.top + ROW_SPACING + 4 - scrollOffsetY;
+				r2.top = previousActiveRow * delegate->rowHeight() - 2 - scrollOffsetY;
+				r2.bottom = repaint.top + delegate->rowHeight() + 4 - scrollOffsetY;
 				//InvalidateRect(hWnd, &r2, true);
 				//InvalidateRect(hWnd, NULL, true);
 
 				repaint.left = 0;
 				repaint.right = client.right;
-				repaint.top = activeRow * ROW_SPACING - 2 - scrollOffsetY;
-				repaint.bottom = repaint.top + ROW_SPACING + 4  - scrollOffsetY;
+				repaint.top = activeRow * delegate->rowHeight() - 2 - scrollOffsetY;
+				repaint.bottom = repaint.top + delegate->rowHeight() + 4  - scrollOffsetY;
 				//InvalidateRect(hWnd, &repaint, true);
 				InvalidateRect(hWnd, NULL, true);
 
@@ -464,7 +487,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		//rect.left = 0;
 		//rect.right = window.right - window.left;
 		//rect.top = 0;
-		//rect.bottom = ROW_SPACING;
+		//rect.bottom = delegate->rowHeight();
 		//FillRect(hdc, &rect, CreateSolidBrush(RGB(120,120,120)));
 		
 		
@@ -488,9 +511,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		overflowY = false;
 		overflowX = false;
 		for(int i=1; i<delegate->totalRows()+2; i+=1){
-			MoveToEx(hdc, 0, i*ROW_SPACING, NULL);
-			LineTo(hdc, totalWidth, i*ROW_SPACING);
-			if ( i * ROW_SPACING > ps.rcPaint.bottom ){
+			if ( i * delegate->rowHeight() > ps.rcPaint.bottom ){
 				//overflow
 				overflowY = true;
 				break;
@@ -500,8 +521,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		int left = 0;
 		for(int i=0; i<numColumns; i++){
 			GridColumn* col = columns[i];
-			MoveToEx(hdc, left + col->getWidth(), ROW_SPACING+1, NULL);
-			LineTo(hdc, left + col->getWidth(), (delegate->totalRows()+1)*ROW_SPACING);
 			left += col->getWidth();
 		}
 
@@ -509,13 +528,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			overflowX = true;
 		}
 
+		DrawVerticalGridlines(hdc, client);
+		DrawHorizontalGridlines(hdc, client);
+
+
 		int j = 0;
 		left = 0;
-		int top = ROW_SPACING;
+		int top = delegate->rowHeight();
 		for(int row = 0; row<delegate->totalRows(); row++){
 			left = 0;
 			DrawTextForRow(hdc, ps.rcPaint, row);
-			top += ROW_SPACING;
+			top += delegate->rowHeight();
 
 		}
 
@@ -533,13 +556,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				accum += columns[i]->getWidth();
 			}
 			int cx = accum + 1 + columns[activeCol]->getWidth();
-			Rectangle(hdc, accum + 1 , activeRow * ROW_SPACING +1 , cx, (activeRow + 1) * ROW_SPACING);*/
+			Rectangle(hdc, accum + 1 , activeRow * delegate->rowHeight() +1 , cx, (activeRow + 1) * delegate->rowHeight());*/
 			HBRUSH brush = CreateSolidBrush(RGB(167,205,240));
 			RECT row;
 			row.left = 0;
 			row.right = totalWidth;
-			row.top = activeRow * ROW_SPACING;
-			row.bottom = row.top + ROW_SPACING;
+			row.top = activeRow * delegate->rowHeight();
+			row.bottom = row.top + delegate->rowHeight();
 			FillRect(hdc, &row, brush);
 			Rectangle(hdc, row.left, row.top, row.right, row.bottom);
 			DrawTextForRow(hdc, ps.rcPaint, activeRow-1);
@@ -596,11 +619,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			SetScrollPos(hWnd, SB_VERT, scrollOffsetY, true);
 			InvalidateRect(hWnd, NULL, true);
 		} else if ( cmd == SB_LINEDOWN ){
-			scrollOffsetY += ROW_SPACING;
+			scrollOffsetY += delegate->rowHeight();
 			SetScrollPos(hWnd, SB_VERT, scrollOffsetY, true);
 			InvalidateRect(hWnd, NULL, true);
 		} else if ( cmd == SB_LINEUP ){
-			scrollOffsetY -= ROW_SPACING;
+			scrollOffsetY -= delegate->rowHeight();
 			if( scrollOffsetY < 0 ) scrollOffsetY = 0;
 			SetScrollPos(hWnd, SB_VERT, scrollOffsetY, true);
 			InvalidateRect(hWnd, NULL, true);
