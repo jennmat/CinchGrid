@@ -556,16 +556,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		GetClientRect(hWnd, &client);
 		if( totalWidth > client.right ){
 			overflowX = true;
+		} else {
+			overflowX = false;
 		}
 		if ( totalHeight > client.bottom ){
 			overflowY = true;
+		} else {
+			overflowY = false;
 		}
-		if ( overflowX || scrollOffsetX > 0){
+		if ( overflowX ){
 			ShowScrollBar(hWnd, SB_HORZ, true);
 		} else {
 			ShowScrollBar(hWnd, SB_HORZ, false);
 		}
-		if ( overflowY || scrollOffsetY > 0 ){
+		if ( overflowY ){
 			ShowScrollBar(hWnd, SB_VERT, true);
 		} else {
 			ShowScrollBar(hWnd, SB_VERT, false);
