@@ -4,7 +4,7 @@
 
 
 int ReferenceDelegate::totalColumns(){
-	return 3;
+	return 30;
 }
 
 int ReferenceDelegate::totalRows(){

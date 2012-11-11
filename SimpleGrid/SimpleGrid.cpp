@@ -241,8 +241,8 @@ void DrawHeader(HDC hdc, RECT client){
 	if ( delegate->stickyHeaders() ){
 		POINT origin;
 		GetWindowOrgEx(hdc, &origin);
-		SetWindowOrgEx(hdc, origin.x - scrollOffsetX, origin.y - scrollOffsetY, 0);
-		OffsetRect(&client, -scrollOffsetX, -scrollOffsetY);
+		SetWindowOrgEx(hdc, origin.x , origin.y - scrollOffsetY, 0);
+		OffsetRect(&client, 0, -scrollOffsetY);
 	}
 
 
@@ -299,8 +299,8 @@ void DrawHeader(HDC hdc, RECT client){
 	if ( delegate->stickyHeaders() ){
 		POINT origin;
 		GetWindowOrgEx(hdc, &origin);
-		SetWindowOrgEx(hdc, origin.x + scrollOffsetX, origin.y + scrollOffsetY, 0);
-		OffsetRect(&client, scrollOffsetX, scrollOffsetY);
+		SetWindowOrgEx(hdc, origin.x, origin.y + scrollOffsetY, 0);
+		OffsetRect(&client, 0, scrollOffsetY);
 	}
 
 }
@@ -622,6 +622,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			InvalidateRect(hWnd, NULL, true);
 		} else if ( cmd == SB_PAGEDOWN ){
 			scrollOffsetY += client.bottom;
+			if( scrollOffsetY > totalHeight - client.bottom ){
+				scrollOffsetY = totalHeight - client.bottom;
+			}	
 			SetScrollPos(hWnd, SB_VERT, scrollOffsetY, true);
 			InvalidateRect(hWnd, NULL, true);
 		} else if ( cmd == SB_PAGEUP ){
@@ -631,6 +634,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			InvalidateRect(hWnd, NULL, true);
 		} else if ( cmd == SB_LINEDOWN ){
 			scrollOffsetY += delegate->rowHeight();
+			if( scrollOffsetY > totalHeight - client.bottom ){
+				scrollOffsetY = totalHeight - client.bottom;
+			}	
 			SetScrollPos(hWnd, SB_VERT, scrollOffsetY, true);
 			InvalidateRect(hWnd, NULL, true);
 		} else if ( cmd == SB_LINEUP ){
@@ -654,6 +660,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			RECT client;
 			GetClientRect(hWnd, &client);
 			scrollOffsetX += client.right;
+			if( scrollOffsetX > totalWidth - client.right ){
+				scrollOffsetX = totalWidth - client.right;
+			}
 			SetScrollPos(hWnd, SB_HORZ, scrollOffsetX, true);
 			InvalidateRect(hWnd, NULL, true);
 		
@@ -661,12 +670,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			RECT client;
 			GetClientRect(hWnd, &client);
 			scrollOffsetX -= client.right;
+			if( scrollOffsetX < 0 ) scrollOffsetX = 0;
 			SetScrollPos(hWnd, SB_HORZ, scrollOffsetX, true);
 			InvalidateRect(hWnd, NULL, true);
 		} else if ( cmd == SB_LINELEFT ) {
 			RECT client;
 			GetClientRect(hWnd, &client);
 			scrollOffsetX -= 10;
+			if ( scrollOffsetX < 0 ) scrollOffsetX = 0;
 			SetScrollPos(hWnd, SB_HORZ, scrollOffsetX, true);
 			InvalidateRect(hWnd, NULL, true);
 
@@ -675,6 +686,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			RECT client;
 			GetClientRect(hWnd, &client);
 			scrollOffsetX += 10;
+			if( scrollOffsetX > totalWidth - client.right ){
+				scrollOffsetX = totalWidth - client.right;
+			}
 			SetScrollPos(hWnd, SB_HORZ, scrollOffsetX, true);
 			InvalidateRect(hWnd, NULL, true);
 		}
