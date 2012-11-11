@@ -20,7 +20,7 @@ public:
 };
 
 
-class HardCodedDelegate : public GridDelegate {
+class ReferenceDelegate : public GridDelegate {
 public:
 	int totalRows();
 	int totalColumns();

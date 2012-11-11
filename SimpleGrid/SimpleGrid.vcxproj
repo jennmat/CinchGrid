@@ -87,7 +87,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GridColumn.cpp" />
-    <ClCompile Include="HardCodedDelegate.cpp" />
+    <ClCompile Include="ReferenceDelegate.cpp" />
     <ClCompile Include="SimpleGrid.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

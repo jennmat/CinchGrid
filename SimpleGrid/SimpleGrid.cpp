@@ -180,7 +180,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	ShowScrollBar(hWnd, SB_BOTH, false);
 
-	delegate = new HardCodedDelegate();
+	delegate = new ReferenceDelegate();
 
 	for(int i=0; i<delegate->totalColumns(); i++){
 		addColumn(delegate->headerContent(i), delegate->columnWidth(i));
