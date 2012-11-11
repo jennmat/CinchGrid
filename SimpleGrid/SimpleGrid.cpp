@@ -467,6 +467,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 
 			columns[activelyDraggedColumn]->setWidth(mouseXPos - accum);	
+			
+			totalWidth = 0;
+			for(int i=0; i<numColumns; i++){
+				totalWidth += columns[i]->getWidth();
+			}
+			
 			InvalidateRect(hWnd, NULL, true);
 		}
 		draggingHeader = false;

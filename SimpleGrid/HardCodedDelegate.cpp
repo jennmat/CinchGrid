@@ -56,7 +56,7 @@ bool HardCodedDelegate::drawHorizontalGridlines(){
 }
 
 bool HardCodedDelegate::drawVerticalGridlines(){
-	return false;
+	return true;
 }
 
 int HardCodedDelegate::rowHeight(){
