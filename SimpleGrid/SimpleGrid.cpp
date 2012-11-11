@@ -41,6 +41,11 @@ int activelyDraggedColumn = -1;
 
 HPEN headerPen;
 
+HDC offscreenDC;
+HBITMAP offscreenBitmap;
+
+void DrawGridElements(HDC hdc, RECT client);
+
 void addColumn(wchar_t * header, int width) {
 	columns[numColumns] = new GridColumn(header, width);
 	numColumns++;
@@ -222,15 +227,20 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	}
 
 	headerPen = CreatePen(PS_SOLID, 1, RGB(210, 210, 210));
-	
 
-   //SetScroll(hWnd);
-   ShowWindow(hWnd, nCmdShow);
-   UpdateWindow(hWnd);
+	//offscreenDC = CreateCompatibleDC(GetDC(hWnd));
+	//offscreenBitmap = CreateCompatibleBitmap(offscreenDC, client.right, client.bottom);
+	//SelectObject(offscreenDC, offscreenBitmap);
+	//DrawGridElements(offscreenDC, client);
+
+	//SetScroll(hWnd);
+	ShowWindow(hWnd, nCmdShow);
+	UpdateWindow(hWnd);
 
    
-   return TRUE;
+	return TRUE;
 }
+
 
 void DrawHeaderDragGuideline(HDC hdc, RECT client)
 {
@@ -334,6 +344,7 @@ void DrawVerticalGridlines(HDC hdc, RECT client)
 
 void DrawHorizontalGridlines(HDC hdc, RECT client)
 {
+	OutputDebugString(L"horiz");
 	if( delegate->drawHorizontalGridlines() ){
 		for(int i=1; i<delegate->totalRows()+2; i+=1){
 			MoveToEx(hdc, 0, i*delegate->rowHeight(), NULL);
@@ -390,6 +401,11 @@ void DrawActiveRow(HDC hdc, RECT client)
 
 void DrawCellText(HDC hdc, RECT client)
 {
+	SetBkMode(hdc, TRANSPARENT);
+
+	HFONT hFont = delegate->getFont();
+	SelectObject(hdc, hFont);
+		
 	int j = 0;
 	int left = 0;
 	int top = delegate->rowHeight();
@@ -431,6 +447,20 @@ void scrollEditors(int offsetX, int offsetY){
 	}
 }
 
+
+void DrawGridElements(HDC hdc, RECT client)
+{
+	FillRect(hdc, &client, CreateSolidBrush(RGB(255,255,255)));
+	DrawVerticalGridlines(hdc, client);
+	DrawHorizontalGridlines(hdc, client);
+	DrawCellText(hdc, client);
+
+	DrawActiveRow(hdc, client);
+	DrawHeaderDragGuideline(hdc, client);
+
+		
+	DrawHeader(hdc, client);
+}
 
 
 //
@@ -503,6 +533,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if ( draggingHeader == true ){
 			int accum = 0;
 			int mouseXPos = GET_X_LPARAM(lParam); 
+			totalWidth = 0;
 			for(int i=0; i<activelyDraggedColumn; i++){
 				accum += columns[i]->getWidth();
 			}
@@ -609,7 +640,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		} else {
 			overflowY = false;
 		}
-		if ( overflowX ){
+		if ( overflowX){
 			ShowScrollBar(hWnd, SB_HORZ, true);
 		} else {
 			ShowScrollBar(hWnd, SB_HORZ, false);
@@ -627,15 +658,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		
 		hdc = BeginPaint(hWnd, &ps);
 		
-		POINT origin;
-		GetWindowOrgEx(hdc, &origin);
-		SetWindowOrgEx(hdc, origin.x + scrollOffsetX, origin.y + scrollOffsetY, 0);
+		//POINT origin;
+		//GetWindowOrgEx(hdc, &origin);
+		//SetWindowOrgEx(hdc, origin.x + scrollOffsetX, origin.y + scrollOffsetY, 0);
 
-		OffsetRect(&ps.rcPaint, scrollOffsetX, scrollOffsetY);
-
-		HFONT hFont = delegate->getFont();
-		SelectObject(hdc, hFont);
-		SetBkMode(hdc, TRANSPARENT);
+		//OffsetRect(&ps.rcPaint, scrollOffsetX, scrollOffsetY);
 
 		
 		DrawVerticalGridlines(hdc, ps.rcPaint);
@@ -647,14 +674,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		DrawHeaderDragGuideline(hdc, ps.rcPaint);
 
-		
-		DrawHeader(hdc, ps.rcPaint);	
-		
-		//BitBlt(h, 0, 0, window.right-window.left, window.bottom-window.top, hdc, 0, 0, SRCCOPY);
+		//BitBlt(hdc, ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right, ps.rcPaint.bottom, offscreenDC, ps.rcPaint.left, ps.rcPaint.top, SRCCOPY);
 		
 		EndPaint(hWnd, &ps);
 
-		SetWindowOrgEx(hdc, origin.x, origin.y, 0);
+		//SetWindowOrgEx(hdc, origin.x, origin.y, 0);
 		}
 		break;
 	case WM_DESTROY:
