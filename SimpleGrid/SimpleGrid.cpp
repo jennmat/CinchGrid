@@ -40,6 +40,7 @@ int draggedXPos = 0;
 int activelyDraggedColumn = -1;
 
 HPEN headerPen;
+HPEN gridlinesPen;
 
 HDC offscreenDC;
 HBITMAP offscreenBitmap;
@@ -227,17 +228,26 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	}
 
 	headerPen = CreatePen(PS_SOLID, 1, RGB(210, 210, 210));
+	gridlinesPen = CreatePen(PS_SOLID, 1, RGB(210, 210, 210));
 
-	//offscreenDC = CreateCompatibleDC(GetDC(hWnd));
-	//offscreenBitmap = CreateCompatibleBitmap(offscreenDC, client.right, client.bottom);
-	//SelectObject(offscreenDC, offscreenBitmap);
-	//DrawGridElements(offscreenDC, client);
+	offscreenDC = CreateCompatibleDC(GetDC(hWnd));
+	//TODO: This attempts to draw the entire grid into memory.  This could be a problem for large grids.
+	offscreenBitmap = CreateCompatibleBitmap(GetDC(hWnd), totalWidth, totalHeight);
+	SelectObject(offscreenDC, offscreenBitmap);
+	
+	RECT c;
+	c.left = 0;
+	c.right = totalWidth;
+	c.bottom = totalHeight;
+	c.top = 0;
+	FillRect(offscreenDC, &c, CreateSolidBrush(RGB(255,255,255)));
+	
+	DrawGridElements(offscreenDC, c);
 
 	//SetScroll(hWnd);
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
 
-   
 	return TRUE;
 }
 
@@ -245,7 +255,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 void DrawHeaderDragGuideline(HDC hdc, RECT client)
 {
 	if ( draggingHeader == true ){
-		HPEN headerPen = CreatePen(PS_SOLID, 1, RGB(180, 180, 180));
 		SelectObject(hdc, headerPen);	
 	
 		MoveToEx(hdc, draggedXPos, 0, NULL);
@@ -264,7 +273,6 @@ void DrawHeader(HDC hdc, RECT client){
 	}
 
 
-	HPEN headerPen = CreatePen(PS_SOLID, 1, RGB(165, 172, 181));
 	SelectObject(hdc, headerPen);	
 		
 
@@ -279,17 +287,17 @@ void DrawHeader(HDC hdc, RECT client){
 		GridColumn* col = columns[l];
 		int i = col->getWidth();
 		//Rectangle(hdc, i, 0, i + COL_SPACING, delegate->rowHeight());
-		MoveToEx(hdc, left+i, 0, NULL);
-		LineTo(hdc, left+i, delegate->rowHeight());
+		MoveToEx(hdc, left+i-1, 0, NULL);
+		LineTo(hdc, left+i-1, delegate->rowHeight());
 		TRIVERTEX vertex[2] ;
-		vertex[0].x     = left+1;
+		vertex[0].x     = left;
 		vertex[0].y     = 1;
 		vertex[0].Red   = 0xf000;
 		vertex[0].Green = 0xf000;
 		vertex[0].Blue  = 0xf000;
 		vertex[0].Alpha = 0x0000;
 
-		vertex[1].x     = left+i;
+		vertex[1].x     = left+i-1;
 		vertex[1].y     = delegate->rowHeight(); 
 		vertex[1].Red   = 0xe000;
 		vertex[1].Green = 0xe000;
@@ -325,14 +333,14 @@ void DrawHeader(HDC hdc, RECT client){
 
 void DrawVerticalGridlines(HDC hdc, RECT client)
 {
-	SelectObject(hdc, headerPen);
+	SelectObject(hdc, gridlinesPen);
 
 	if ( delegate->drawVerticalGridlines() ){
 		int left = 0;
 		for(int i=0; i<numColumns; i++){
 			GridColumn* col = columns[i];
-			MoveToEx(hdc, left + col->getWidth(), delegate->rowHeight()+1, NULL);
-			LineTo(hdc, left + col->getWidth(), (delegate->totalRows()+1)*delegate->rowHeight());
+			MoveToEx(hdc, left + col->getWidth()-1, delegate->rowHeight()+1, NULL);
+			LineTo(hdc, left + col->getWidth()-1, (delegate->totalRows()+1)*delegate->rowHeight());
 			left += col->getWidth();
 		}
 	} else {
@@ -344,7 +352,7 @@ void DrawVerticalGridlines(HDC hdc, RECT client)
 
 void DrawHorizontalGridlines(HDC hdc, RECT client)
 {
-	OutputDebugString(L"horiz");
+	SelectObject(hdc, gridlinesPen);
 	if( delegate->drawHorizontalGridlines() ){
 		for(int i=1; i<delegate->totalRows()+2; i+=1){
 			MoveToEx(hdc, 0, i*delegate->rowHeight(), NULL);
@@ -375,7 +383,24 @@ void DrawTextForRow(HDC hdc, RECT client, int row){
 			}
 		}
 	}
+}
 
+void ClearActiveRow(int row, HDC hdc, RECT client)
+{
+	RECT rect;
+	rect.left = 0;
+	rect.right = totalWidth;
+	rect.top = row * delegate->rowHeight();
+	rect.bottom = rect.top + delegate->rowHeight();
+	FillRect(hdc, &rect, CreateSolidBrush(RGB(255,255,255)));
+	//Gridlines
+	if ( delegate->drawHorizontalGridlines()){
+		DrawHorizontalGridlines(hdc, client);
+	}
+	if ( delegate->drawVerticalGridlines()){
+		DrawVerticalGridlines(hdc, client);
+	}
+	DrawTextForRow(hdc, client, row-1);
 }
 
 void DrawActiveRow(HDC hdc, RECT client)
@@ -450,7 +475,6 @@ void scrollEditors(int offsetX, int offsetY){
 
 void DrawGridElements(HDC hdc, RECT client)
 {
-	FillRect(hdc, &client, CreateSolidBrush(RGB(255,255,255)));
 	DrawVerticalGridlines(hdc, client);
 	DrawHorizontalGridlines(hdc, client);
 	DrawCellText(hdc, client);
@@ -595,7 +619,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					r2.right = client.right;
 					r2.top = previousActiveRow * delegate->rowHeight() - 2 - scrollOffsetY;
 					r2.bottom = repaint.top + delegate->rowHeight() + 4 - scrollOffsetY;
-					//InvalidateRect(hWnd, &r2, true);
 					//InvalidateRect(hWnd, NULL, true);
 
 					repaint.left = 0;
@@ -603,12 +626,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					repaint.top = activeRow * delegate->rowHeight() - 2 - scrollOffsetY;
 					repaint.bottom = repaint.top + delegate->rowHeight() + 4  - scrollOffsetY;
 					//InvalidateRect(hWnd, &repaint, true);
-					InvalidateRect(hWnd, NULL, true);
+					ClearActiveRow(previousActiveRow, offscreenDC, client);
+					DrawActiveRow(offscreenDC, client);
+					InvalidateRect(hWnd, &repaint, true);
+					InvalidateRect(hWnd, &r2, true);
 				}
 				startEditing(activeRow-1);
 
 			}
-			
 		}
 		}
 	case WM_COMMAND:
@@ -664,17 +689,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		//OffsetRect(&ps.rcPaint, scrollOffsetX, scrollOffsetY);
 
-		
-		DrawVerticalGridlines(hdc, ps.rcPaint);
-		DrawHorizontalGridlines(hdc, ps.rcPaint);
-		DrawCellText(hdc, ps.rcPaint);
 
-		if ( delegate->rowSelection() == true ){
-			DrawActiveRow(hdc, ps.rcPaint);
-		}
-		DrawHeaderDragGuideline(hdc, ps.rcPaint);
-
-		//BitBlt(hdc, ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right, ps.rcPaint.bottom, offscreenDC, ps.rcPaint.left, ps.rcPaint.top, SRCCOPY);
+		BitBlt(hdc, ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right, ps.rcPaint.bottom, offscreenDC, ps.rcPaint.left + scrollOffsetX, ps.rcPaint.top + scrollOffsetY, SRCCOPY);
 		
 		EndPaint(hWnd, &ps);
 
