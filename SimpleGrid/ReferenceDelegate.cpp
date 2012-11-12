@@ -8,7 +8,7 @@ int ReferenceDelegate::totalColumns(){
 }
 
 int ReferenceDelegate::totalRows(){
-	return 15;
+	return 150;
 }
 
 int ReferenceDelegate::columnWidth(int column){
@@ -63,3 +63,63 @@ int ReferenceDelegate::rowHeight(){
 	return 32;
 }
 
+bool ReferenceDelegate::rowSelection() {
+	return false;
+}
+
+bool ReferenceDelegate::allowEditing(int col){
+	//if( col == 0 ) return false;
+	return true;
+}
+
+HWND CreateComboBox(HWND parent, HINSTANCE hInst){
+	HWND cb = CreateWindowEx(WS_EX_CLIENTEDGE, L"COMBOBOX", L"", WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_OVERLAPPED | WS_TABSTOP,
+		0, 0, 0, 0, parent, NULL, hInst, NULL);
+
+
+	TCHAR Planets[9][10] =  
+	{
+		TEXT("Mercury"), TEXT("Venus"), TEXT("Terra"), TEXT("Mars"), 
+		TEXT("Jupiter"), TEXT("Saturn"), TEXT("Uranus"), TEXT("Neptune"), 
+		TEXT("Pluto??") 
+	};
+       
+	TCHAR A[16]; 
+	int  k = 0; 
+
+	memset(&A,0,sizeof(A));       
+	for (k = 0; k <= 8; k += 1)
+	{
+		wcscpy_s(A, sizeof(A)/sizeof(TCHAR),  (TCHAR*)Planets[k]);
+
+		// Add string to combobox.
+		SendMessage(cb,(UINT) CB_ADDSTRING,(WPARAM) 0,(LPARAM) A); 
+	}
+  
+	// Send the CB_SETCURSEL message to display an initial item 
+	//  in the selection field  
+	SendMessage(cb, CB_SETCURSEL, (WPARAM)2, (LPARAM)0);
+	return cb;
+}
+
+HWND ReferenceDelegate::editorForColumn(int col, HWND parent, HINSTANCE hInst){
+	if ( col == 1 ){
+		return CreateWindowEx(0, DATETIMEPICK_CLASS, TEXT("DateTime"), WS_CHILD|WS_VISIBLE|WS_TABSTOP,
+			0, 0, 0, 0, parent, NULL, hInst, NULL);
+
+	} else if ( col == 2 ) {
+
+		return CreateComboBox(parent,hInst);
+	}
+
+	return CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP,
+		0, 0, 0, 0, parent, NULL, hInst, NULL);
+
+}
+
+void ReferenceDelegate::setupEditorForCell(HWND editor, int row, int col){
+	SendMessage(editor, WM_SETTEXT, (WPARAM)0, (LPARAM)this->cellContent(row, col));
+}
+
+void ReferenceDelegate::cellEditingFinished(HWND editor, int row, int col){
+}

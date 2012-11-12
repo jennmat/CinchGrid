@@ -11,6 +11,7 @@
 
 // Global Variables:
 HINSTANCE hInst;								// current instance
+HWND hWnd;
 TCHAR szTitle[MAX_LOADSTRING];					// The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
 
@@ -62,6 +63,15 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	LoadString(hInstance, IDC_SIMPLEGRID, szWindowClass, MAX_LOADSTRING);
 	MyRegisterClass(hInstance);
 
+	INITCOMMONCONTROLSEX icex;
+
+    // Ensure that the common control DLL is loaded. 
+    icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
+	icex.dwICC  = ICC_COOL_CLASSES | ICC_DATE_CLASSES | ICC_TAB_CLASSES;
+
+	InitCommonControlsEx(&icex);
+
+
 	// Perform application initialization:
 	if (!InitInstance (hInstance, nCmdShow))
 	{
@@ -73,7 +83,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	// Main message loop:
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
-		if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
+		if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg) && !IsDialogMessage(hWnd, &msg))
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
@@ -162,8 +172,6 @@ void SetScroll(HWND hWnd)
 //
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-   HWND hWnd;
-
    hInst = hInstance; // Store instance handle in our global variable
 
    hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW | WS_HSCROLL | WS_VSCROLL,
@@ -392,6 +400,39 @@ void DrawCellText(HDC hdc, RECT client)
 	}
 }
 
+void startEditing(int row){
+	int left = 0;
+	HWND previous = HWND_TOP;
+	for(int i=0; i<numColumns; i++){
+		if( delegate->allowEditing(i) ){
+			if ( columns[i]->getEditor() == NULL ){
+				HWND editor = delegate->editorForColumn(i, hWnd, hInst);
+				SendMessage(editor, WM_SETFONT, (WPARAM)delegate->getFont(), 0);
+				columns[i]->setEditor(editor);
+			}
+			HWND editor = columns[i]->getEditor();
+			delegate->setupEditorForCell(editor, row, i);
+			SetWindowPos(editor, previous, left-scrollOffsetX, (row+1) * delegate->rowHeight() - scrollOffsetY, columns[i]->getWidth(), delegate->rowHeight(), 0);
+			ShowWindow(editor, SW_SHOW);
+			previous = editor;
+		}
+		left += columns[i]->getWidth();
+	}
+}
+
+void scrollEditors(int offsetX, int offsetY){
+	for(int i=0; i<numColumns; i++){
+		if ( columns[i]->getEditor() != NULL ){
+			RECT editor;
+			GetWindowRect(columns[i]->getEditor(), &editor);
+			MapWindowPoints(NULL, hWnd, (LPPOINT)&editor, 2);
+			SetWindowPos(columns[i]->getEditor(), HWND_TOP, editor.left - offsetX, editor.top - offsetY, 0, 0, SWP_NOSIZE);
+		}
+	}
+}
+
+
+
 //
 //  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
 //
@@ -501,6 +542,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 		} else {
 
+	
 			int accum = 0;
 			for(int i=0; i<numColumns; i++){
 				accum += columns[i]->getWidth();
@@ -512,24 +554,27 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if ( (yPos + scrollOffsetY) / delegate->rowHeight() < delegate->totalRows() + 1 ){
 				int previousActiveRow = activeRow;
 				activeRow = (yPos + scrollOffsetY) / delegate->rowHeight();
-				RECT client;
-				GetClientRect(hWnd, &client);
+				if( delegate->rowSelection() ){
+	
+					RECT client;
+					GetClientRect(hWnd, &client);
 
-				RECT r2;
-				r2.left = 0;
-				r2.right = client.right;
-				r2.top = previousActiveRow * delegate->rowHeight() - 2 - scrollOffsetY;
-				r2.bottom = repaint.top + delegate->rowHeight() + 4 - scrollOffsetY;
-				//InvalidateRect(hWnd, &r2, true);
-				//InvalidateRect(hWnd, NULL, true);
+					RECT r2;
+					r2.left = 0;
+					r2.right = client.right;
+					r2.top = previousActiveRow * delegate->rowHeight() - 2 - scrollOffsetY;
+					r2.bottom = repaint.top + delegate->rowHeight() + 4 - scrollOffsetY;
+					//InvalidateRect(hWnd, &r2, true);
+					//InvalidateRect(hWnd, NULL, true);
 
-				repaint.left = 0;
-				repaint.right = client.right;
-				repaint.top = activeRow * delegate->rowHeight() - 2 - scrollOffsetY;
-				repaint.bottom = repaint.top + delegate->rowHeight() + 4  - scrollOffsetY;
-				//InvalidateRect(hWnd, &repaint, true);
-				InvalidateRect(hWnd, NULL, true);
-
+					repaint.left = 0;
+					repaint.right = client.right;
+					repaint.top = activeRow * delegate->rowHeight() - 2 - scrollOffsetY;
+					repaint.bottom = repaint.top + delegate->rowHeight() + 4  - scrollOffsetY;
+					//InvalidateRect(hWnd, &repaint, true);
+					InvalidateRect(hWnd, NULL, true);
+				}
+				startEditing(activeRow-1);
 
 			}
 			
@@ -597,7 +642,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		DrawHorizontalGridlines(hdc, ps.rcPaint);
 		DrawCellText(hdc, ps.rcPaint);
 
-		DrawActiveRow(hdc, ps.rcPaint);
+		if ( delegate->rowSelection() == true ){
+			DrawActiveRow(hdc, ps.rcPaint);
+		}
 		DrawHeaderDragGuideline(hdc, ps.rcPaint);
 
 		
@@ -622,18 +669,29 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			
 		if ( cmd == SB_THUMBPOSITION ){
 			SetScrollPos(hWnd, SB_VERT, ypos, true);
+			if ( scrollOffsetY < ypos) {
+				scrollEditors(0, scrollOffsetY + ypos);
+			}else{
+				scrollEditors(0, scrollOffsetY - ypos);
+			}
 			scrollOffsetY = ypos;
 			InvalidateRect(hWnd, NULL, true);
 		} else if ( cmd == SB_PAGEDOWN ){
 			scrollOffsetY += client.bottom;
 			if( scrollOffsetY > totalHeight - client.bottom ){
 				scrollOffsetY = totalHeight - client.bottom;
-			}	
+			} else {
+				scrollEditors(0, client.bottom);				
+			}
 			SetScrollPos(hWnd, SB_VERT, scrollOffsetY, true);
 			InvalidateRect(hWnd, NULL, true);
 		} else if ( cmd == SB_PAGEUP ){
 			scrollOffsetY -= client.bottom;
-			if( scrollOffsetY < 0 ) scrollOffsetY = 0;
+			if( scrollOffsetY < 0 ) {
+				scrollOffsetY = 0;
+			} else {
+				scrollEditors(0, 0 - client.bottom);
+			}
 			SetScrollPos(hWnd, SB_VERT, scrollOffsetY, true);
 			InvalidateRect(hWnd, NULL, true);
 		} else if ( cmd == SB_LINEDOWN ){
@@ -642,13 +700,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				scrollOffsetY = totalHeight - client.bottom;
 			}	
 			SetScrollPos(hWnd, SB_VERT, scrollOffsetY, true);
+			scrollEditors(0, delegate->rowHeight());
 			InvalidateRect(hWnd, NULL, true);
 		} else if ( cmd == SB_LINEUP ){
 			scrollOffsetY -= delegate->rowHeight();
-			if( scrollOffsetY < 0 ) scrollOffsetY = 0;
-			SetScrollPos(hWnd, SB_VERT, scrollOffsetY, true);
-			InvalidateRect(hWnd, NULL, true);
-		
+			if( scrollOffsetY < 0 ){
+				scrollOffsetY = 0;
+			} else {
+				scrollEditors(0, 0 - delegate->rowHeight());
+				SetScrollPos(hWnd, SB_VERT, scrollOffsetY, true);
+				InvalidateRect(hWnd, NULL, true);
+			}
+			
 		}
 		return 0;
 		}
@@ -658,6 +721,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		int cmd = LOWORD(wParam);
 		if ( cmd == SB_THUMBPOSITION ){
 			SetScrollPos(hWnd, SB_HORZ, xpos, true);
+			if ( scrollOffsetX < xpos) {
+				scrollEditors(scrollOffsetX - xpos, 0);
+			}else{
+				scrollEditors(scrollOffsetX + xpos, 0);
+			}
 			scrollOffsetX = xpos;
 			InvalidateRect(hWnd, NULL, true);
 		} else if ( cmd == SB_PAGERIGHT ){
@@ -666,6 +734,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			scrollOffsetX += client.right;
 			if( scrollOffsetX > totalWidth - client.right ){
 				scrollOffsetX = totalWidth - client.right;
+			} else {
+				scrollEditors(client.right, 0);
 			}
 			SetScrollPos(hWnd, SB_HORZ, scrollOffsetX, true);
 			InvalidateRect(hWnd, NULL, true);
@@ -674,14 +744,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			RECT client;
 			GetClientRect(hWnd, &client);
 			scrollOffsetX -= client.right;
-			if( scrollOffsetX < 0 ) scrollOffsetX = 0;
+			if( scrollOffsetX < 0 ) { 
+				scrollOffsetX = 0;
+			} else {
+				scrollEditors(-client.right, 0);
+			}
 			SetScrollPos(hWnd, SB_HORZ, scrollOffsetX, true);
 			InvalidateRect(hWnd, NULL, true);
 		} else if ( cmd == SB_LINELEFT ) {
 			RECT client;
 			GetClientRect(hWnd, &client);
 			scrollOffsetX -= 10;
-			if ( scrollOffsetX < 0 ) scrollOffsetX = 0;
+			if ( scrollOffsetX < 0 ) {
+				scrollOffsetX = 0;
+			} else {
+				scrollEditors(-10, 0);
+			}
 			SetScrollPos(hWnd, SB_HORZ, scrollOffsetX, true);
 			InvalidateRect(hWnd, NULL, true);
 
@@ -692,6 +770,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			scrollOffsetX += 10;
 			if( scrollOffsetX > totalWidth - client.right ){
 				scrollOffsetX = totalWidth - client.right;
+			} else {
+				scrollEditors(10, 0);
 			}
 			SetScrollPos(hWnd, SB_HORZ, scrollOffsetX, true);
 			InvalidateRect(hWnd, NULL, true);

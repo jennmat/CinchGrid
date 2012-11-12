@@ -18,6 +18,8 @@
 #include <tchar.h>
 
 
+#include <CommCtrl.h>
+
 #include "GridColumn.h"
 #include "GridDelegate.h"
 

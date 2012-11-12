@@ -7,6 +7,7 @@
 GridColumn::GridColumn(wchar_t * header, int width){
 	this->header = header;
 	this->width = width;
+	this->editor = NULL;
 }
 
 wchar_t * GridColumn::getHeader(){
@@ -21,3 +22,10 @@ void GridColumn::setWidth(int width){
 	this->width = width;
 }
 
+HWND GridColumn::getEditor(){
+	return this->editor;
+}
+
+void GridColumn::setEditor(HWND hwnd){
+	this->editor = hwnd;
+}

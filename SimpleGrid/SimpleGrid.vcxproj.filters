@@ -22,6 +22,7 @@
     <None Include="SimpleGrid.ico">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="SimpleGrid.exe.manifest" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
