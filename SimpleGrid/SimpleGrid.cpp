@@ -44,6 +44,7 @@ HPEN gridlinesPen;
 
 HDC offscreenDC;
 HBITMAP offscreenBitmap;
+RECT totalArea;
 
 void DrawGridElements(HDC hdc, RECT client);
 
@@ -201,7 +202,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		totalWidth += delegate->columnWidth(i);
 	}
 
-	totalHeight = (delegate->totalRows() + 1) * delegate->rowHeight();
+	totalHeight = (delegate->totalRows() + 1) * delegate->rowHeight() + delegate->totalRows();
 
 	RECT client;
 	GetClientRect(hWnd, &client);
@@ -234,15 +235,14 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	//TODO: This attempts to draw the entire grid into memory.  This could be a problem for large grids.
 	offscreenBitmap = CreateCompatibleBitmap(GetDC(hWnd), totalWidth, totalHeight);
 	SelectObject(offscreenDC, offscreenBitmap);
+
+
+	totalArea.left = 0;
+	totalArea.right = totalWidth;
+	totalArea.bottom = totalHeight;
+	totalArea.top = 0;
 	
-	RECT c;
-	c.left = 0;
-	c.right = totalWidth;
-	c.bottom = totalHeight;
-	c.top = 0;
-	FillRect(offscreenDC, &c, CreateSolidBrush(RGB(255,255,255)));
-	
-	DrawGridElements(offscreenDC, c);
+	DrawGridElements(offscreenDC, totalArea);
 
 	//SetScroll(hWnd);
 	ShowWindow(hWnd, nCmdShow);
@@ -263,8 +263,6 @@ void DrawHeaderDragGuideline(HDC hdc, RECT client)
 }
 
 void DrawHeader(HDC hdc, RECT client){
-
-	
 	if ( delegate->stickyHeaders() ){
 		POINT origin;
 		GetWindowOrgEx(hdc, &origin);
@@ -272,9 +270,7 @@ void DrawHeader(HDC hdc, RECT client){
 		OffsetRect(&client, 0, -scrollOffsetY);
 	}
 
-
 	SelectObject(hdc, headerPen);	
-		
 
 	MoveToEx(hdc, 0, 0, NULL);
 	LineTo(hdc, totalWidth, 0);
@@ -360,28 +356,24 @@ void DrawHorizontalGridlines(HDC hdc, RECT client)
 		}
 	} else {
 		//Always draw bottom gridline
-		MoveToEx(hdc, 0, totalHeight, NULL);
-		LineTo(hdc, totalWidth, totalHeight);
+		MoveToEx(hdc, 0, totalHeight-1, NULL);
+		LineTo(hdc, totalWidth, totalHeight-1);
 	}
 }
 
 void DrawTextForRow(HDC hdc, RECT client, int row){
 	int left = 0;
 	int top = delegate->rowHeight() * (row+1) + 1;
-	if ( top < client.bottom ){
-		for(int col = 0; col<delegate->totalColumns(); col++){
-			GridColumn* c = columns[col];
-			RECT textRect;
-			textRect.left = left+7;
-			textRect.right = left + c->getWidth();
-			textRect.top = top;
-			textRect.bottom = top + delegate->rowHeight();
-			left += c->getWidth();
+	for(int col = 0; col<delegate->totalColumns(); col++){
+		GridColumn* c = columns[col];
+		RECT textRect;
+		textRect.left = left+7;
+		textRect.right = left + c->getWidth();
+		textRect.top = top;
+		textRect.bottom = top + delegate->rowHeight();
+		left += c->getWidth();
 			
-			if ( textRect.left < client.right ) {
-				DrawText(hdc, delegate->cellContent(row, col), -1, &textRect, DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS);
-			}
-		}
+		DrawText(hdc, delegate->cellContent(row, col), -1, &textRect, DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS);
 	}
 }
 
@@ -475,6 +467,8 @@ void scrollEditors(int offsetX, int offsetY){
 
 void DrawGridElements(HDC hdc, RECT client)
 {
+	FillRect(offscreenDC, &totalArea, CreateSolidBrush(RGB(255,255,255)));
+
 	DrawVerticalGridlines(hdc, client);
 	DrawHorizontalGridlines(hdc, client);
 	DrawCellText(hdc, client);
@@ -523,21 +517,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				RECT client;
 				GetClientRect(hWnd, &client);
 
-				RECT invalidate;
-				invalidate.left = draggedXPos - 1;
-				invalidate.right = draggedXPos + 1;
-				invalidate.top = 0;
-				invalidate.bottom = client.bottom;
+				RECT invalidate1;
+				invalidate1.left = draggedXPos - 1;
+				invalidate1.right = draggedXPos + 1;
+				invalidate1.top = 0;
+				invalidate1.bottom = client.bottom;
 
-				InvalidateRect(hWnd, &invalidate, true);
 
 				draggedXPos = mouseXPos;
-				
+				RECT invalidate;
 				invalidate.left = mouseXPos - 1;
 				invalidate.right = mouseXPos + 1;
 				invalidate.top = 0;
 				invalidate.bottom = client.bottom;
 
+				InvalidateRect(hWnd, &invalidate1, true);
 				InvalidateRect(hWnd, &invalidate, true);
 			}
 		}
@@ -568,7 +562,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			for(int i=0; i<numColumns; i++){
 				totalWidth += columns[i]->getWidth();
 			}
-			
+
+			totalArea.right = totalWidth;
+			offscreenBitmap = CreateCompatibleBitmap(GetDC(hWnd), totalWidth, totalHeight);
+			SelectObject(offscreenDC, offscreenBitmap);
+
+			DrawGridElements(offscreenDC, totalArea);
+
 			InvalidateRect(hWnd, NULL, true);
 		}
 		draggingHeader = false;
@@ -617,19 +617,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					RECT r2;
 					r2.left = 0;
 					r2.right = client.right;
-					r2.top = previousActiveRow * delegate->rowHeight() - 2 - scrollOffsetY;
-					r2.bottom = repaint.top + delegate->rowHeight() + 4 - scrollOffsetY;
+					r2.top = previousActiveRow * delegate->rowHeight() - 2;
+					r2.bottom = repaint.top + delegate->rowHeight() + 4;
 					//InvalidateRect(hWnd, NULL, true);
 
 					repaint.left = 0;
 					repaint.right = client.right;
-					repaint.top = activeRow * delegate->rowHeight() - 2 - scrollOffsetY;
-					repaint.bottom = repaint.top + delegate->rowHeight() + 4  - scrollOffsetY;
+					repaint.top = activeRow * delegate->rowHeight() - 2;
+					repaint.bottom = repaint.top + delegate->rowHeight() + 4;
 					//InvalidateRect(hWnd, &repaint, true);
 					ClearActiveRow(previousActiveRow, offscreenDC, client);
 					DrawActiveRow(offscreenDC, client);
-					InvalidateRect(hWnd, &repaint, true);
-					InvalidateRect(hWnd, &r2, true);
+					//InvalidateRect(hWnd, &repaint, true);
+					//InvalidateRect(hWnd, &r2, true);
+					InvalidateRect(hWnd, NULL, true);
+
 				}
 				startEditing(activeRow-1);
 
@@ -692,6 +694,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		BitBlt(hdc, ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right, ps.rcPaint.bottom, offscreenDC, ps.rcPaint.left + scrollOffsetX, ps.rcPaint.top + scrollOffsetY, SRCCOPY);
 		
+		if( draggingHeader ){
+			DrawHeaderDragGuideline(hdc, ps.rcPaint);
+		}
+
 		EndPaint(hWnd, &ps);
 
 		//SetWindowOrgEx(hdc, origin.x, origin.y, 0);
