@@ -7,6 +7,8 @@
 
 #define MAX_SCROLL_RANGE 10000
 
+#define LEFT_MARGIN 3
+
 int numColumns;
 GridColumn* columns[MAX_COLUMNS];
 GridDelegate* delegate;

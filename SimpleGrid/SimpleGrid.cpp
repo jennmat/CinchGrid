@@ -367,7 +367,7 @@ void DrawTextForRow(HDC hdc, RECT client, int row){
 	for(int col = 0; col<delegate->totalColumns(); col++){
 		GridColumn* c = columns[col];
 		RECT textRect;
-		textRect.left = left+7;
+		textRect.left = left+LEFT_MARGIN;
 		textRect.right = left + c->getWidth();
 		textRect.top = top;
 		textRect.bottom = top + delegate->rowHeight();
@@ -440,7 +440,7 @@ void startEditing(int row){
 		if( delegate->allowEditing(i) ){
 			if ( columns[i]->getEditor() == NULL ){
 				HWND editor = delegate->editorForColumn(i, hWnd, hInst);
-				SendMessage(editor, WM_SETFONT, (WPARAM)delegate->getFont(), 0);
+				SendMessage(editor, WM_SETFONT, (WPARAM)delegate->getEditFont(), 0);
 				columns[i]->setEditor(editor);
 			}
 			HWND editor = columns[i]->getEditor();

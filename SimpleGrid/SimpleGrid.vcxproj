@@ -74,7 +74,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
     <None Include="SimpleGrid.exe.manifest" />
     <None Include="SimpleGrid.ico" />
     <None Include="small.ico" />

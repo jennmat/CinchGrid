@@ -4,7 +4,7 @@
 
 
 int ReferenceDelegate::totalColumns(){
-	return 30;
+	return 4;
 }
 
 int ReferenceDelegate::totalRows(){
@@ -51,8 +51,13 @@ HFONT ReferenceDelegate::getFont(){
 	return hFont;
 }
 
+HFONT ReferenceDelegate::getEditFont(){
+	HFONT hFont=CreateFont(18,0,0,0,0,0,0,0,0,0,0,0,0,TEXT("MS Shell Dlg"));
+	return hFont;
+}
+
 bool ReferenceDelegate::drawHorizontalGridlines(){
-	return true;
+	return false;
 }
 
 bool ReferenceDelegate::drawVerticalGridlines(){
@@ -68,13 +73,13 @@ bool ReferenceDelegate::rowSelection() {
 }
 
 bool ReferenceDelegate::allowEditing(int col){
-	//if( col == 0 ) return false;
+	if( col == 0 ) return false;
 	return true;
 }
 
 HWND CreateComboBox(HWND parent, HINSTANCE hInst){
-	HWND cb = CreateWindowEx(WS_EX_CLIENTEDGE, L"COMBOBOX", L"", WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_OVERLAPPED | WS_TABSTOP,
-		0, 0, 0, 0, parent, NULL, hInst, NULL);
+	HWND cb = CreateWindowEx(WS_EX_CLIENTEDGE, L"COMBOBOX", L"", WS_CHILD | CBS_DROPDOWNLIST | WS_TABSTOP,
+		0, 0, 40, 32, parent, NULL, hInst, NULL);
 
 
 	TCHAR Planets[9][10] =  
@@ -121,5 +126,3 @@ void ReferenceDelegate::setupEditorForCell(HWND editor, int row, int col){
 	SendMessage(editor, WM_SETTEXT, (WPARAM)0, (LPARAM)this->cellContent(row, col));
 }
 
-void ReferenceDelegate::cellEditingFinished(HWND editor, int row, int col){
-}

@@ -21,9 +21,9 @@ public:
 	virtual void setupEditorForCell(HWND editor, int row, int col) = 0;
 	virtual bool allowEditing(int col) = 0;
 	virtual HWND editorForColumn(int, HWND parent, HINSTANCE hInst) = 0;
-	virtual void cellEditingFinished(HWND editor, int row, int col) = 0;
-
+	
 	virtual HFONT getFont()=0;
+	virtual HFONT getEditFont() = 0;
 };
 
 
@@ -48,8 +48,7 @@ public:
 	bool allowEditing(int);
 	void setupEditorForCell(HWND editor, int row, int col);
 	HWND editorForColumn(int, HWND parent, HINSTANCE hInst) ;
-	void cellEditingFinished(HWND editor, int row, int col);
-
 
 	HFONT getFont();
+	HFONT getEditFont();
 };
