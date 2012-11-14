@@ -138,9 +138,9 @@ HWND ReferenceDelegate::editorForColumn(int col, HWND parent, HINSTANCE hInst){
 
 void ReferenceDelegate::editingFinished(HWND editor, int row, int col)
 {
-	wchar_t d[30];
-	swprintf_s(d, L"Lost focus: %d, %d", row, col); 
-	OutputDebugStringW(d);
+	//wchar_t d[30];
+	//swprintf_s(d, L"Lost focus: %d, %d", row, col); 
+	//OutputDebugStringW(d);
 	data[row][col] = (wchar_t *)malloc(100*sizeof(TCHAR));
 	GetWindowText(editor, data[row][col], 100);
 

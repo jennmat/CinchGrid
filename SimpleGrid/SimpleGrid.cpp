@@ -516,8 +516,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 	case WM_ACTIVATE:
 		break;
-	case WM_KILLFOCUS:
-		OutputDebugString(L"Lost focus\n");
 	case WM_MOUSEMOVE:	
 		{
 		int mouseXPos = GET_X_LPARAM(lParam); 
