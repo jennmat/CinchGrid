@@ -2,13 +2,21 @@
 #include "stdafx.h"
 #include <string.h>
 
+ReferenceDelegate::ReferenceDelegate(){
+	int i,j;
+	for(i=0;i<TOTAL_ROWS;i++){
+		for(j=0; j<TOTAL_COLS; j++){
+			data[i][j]=NULL;
+		}
+	}
+}
 
 int ReferenceDelegate::totalColumns(){
-	return 4;
+	return TOTAL_COLS;
 }
 
 int ReferenceDelegate::totalRows(){
-	return 150;
+	return TOTAL_ROWS;
 }
 
 int ReferenceDelegate::columnWidth(int column){
@@ -33,12 +41,18 @@ bool ReferenceDelegate::stickyHeaders(){
 }
 
 wchar_t* ReferenceDelegate::cellContent(int row, int col) {
+	
+	if( data[row][col] != NULL ){
+		return data[row][col];
+	}
+	
 	if ( col == 0 ){
 		wchar_t* buffer = (wchar_t*)malloc(20*sizeof(wchar_t));
 		_itow_s((row+1)*(col+1), buffer, 20, 10);
 
 		return buffer;
 	}
+
 	
 	if( col == 1 ){
 		return TEXT("10/22/2012");
@@ -47,7 +61,7 @@ wchar_t* ReferenceDelegate::cellContent(int row, int col) {
 }
 
 HFONT ReferenceDelegate::getFont(){
-	HFONT hFont=CreateFont(18,0,0,0,0,0,0,0,0,0,0,0,0,TEXT("MS Shell Dlg"));
+	HFONT hFont=CreateFont(17,0,0,0,0,0,0,0,0,0,0,0,0,TEXT("MS Shell Dlg"));
 	return hFont;
 }
 
@@ -57,7 +71,7 @@ HFONT ReferenceDelegate::getEditFont(){
 }
 
 bool ReferenceDelegate::drawHorizontalGridlines(){
-	return false;
+	return true;
 }
 
 bool ReferenceDelegate::drawVerticalGridlines(){
@@ -108,18 +122,29 @@ HWND CreateComboBox(HWND parent, HINSTANCE hInst){
 }
 
 HWND ReferenceDelegate::editorForColumn(int col, HWND parent, HINSTANCE hInst){
-	if ( col == 1 ){
-		return CreateWindowEx(0, DATETIMEPICK_CLASS, TEXT("DateTime"), WS_CHILD|WS_VISIBLE|WS_TABSTOP,
-			0, 0, 0, 0, parent, NULL, hInst, NULL);
+	//if ( col == 1 ){
+		//return CreateWindowEx(0, DATETIMEPICK_CLASS, TEXT("DateTime"), WS_CHILD|WS_VISIBLE|WS_TABSTOP,
+			//0, 0, 0, 0, parent, NULL, hInst, NULL);
 
-	} else if ( col == 2 ) {
+	//} else if ( col == 2 ) {
 
-		return CreateComboBox(parent,hInst);
-	}
+		//return CreateComboBox(parent,hInst);
+	//}
 
 	return CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP,
 		0, 0, 0, 0, parent, NULL, hInst, NULL);
 
+}
+
+void ReferenceDelegate::editingFinished(HWND editor, int row, int col)
+{
+	wchar_t d[30];
+	swprintf_s(d, L"Lost focus: %d, %d", row, col); 
+	OutputDebugStringW(d);
+	data[row][col] = (wchar_t *)malloc(100*sizeof(TCHAR));
+	GetWindowText(editor, data[row][col], 100);
+
+	
 }
 
 void ReferenceDelegate::setupEditorForCell(HWND editor, int row, int col){

@@ -42,6 +42,8 @@ int activelyDraggedColumn = -1;
 HPEN headerPen;
 HPEN gridlinesPen;
 
+HBRUSH solidWhiteBrush;
+
 HDC offscreenDC;
 HBITMAP offscreenBitmap;
 RECT totalArea;
@@ -230,7 +232,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	headerPen = CreatePen(PS_SOLID, 1, RGB(210, 210, 210));
 	gridlinesPen = CreatePen(PS_SOLID, 1, RGB(210, 210, 210));
-
+	solidWhiteBrush = CreateSolidBrush(RGB(255,255,255));
 	offscreenDC = CreateCompatibleDC(GetDC(hWnd));
 	//TODO: This attempts to draw the entire grid into memory.  This could be a problem for large grids.
 	offscreenBitmap = CreateCompatibleBitmap(GetDC(hWnd), totalWidth, totalHeight);
@@ -368,11 +370,11 @@ void DrawTextForRow(HDC hdc, RECT client, int row){
 		GridColumn* c = columns[col];
 		RECT textRect;
 		textRect.left = left+LEFT_MARGIN;
-		textRect.right = left + c->getWidth();
-		textRect.top = top;
-		textRect.bottom = top + delegate->rowHeight();
+		textRect.right = left + c->getWidth()-1;
+		textRect.top = top+1;
+		textRect.bottom = top + delegate->rowHeight()-1;
 		left += c->getWidth();
-			
+		FillRect(hdc, &textRect, solidWhiteBrush); 
 		DrawText(hdc, delegate->cellContent(row, col), -1, &textRect, DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS);
 	}
 }
@@ -384,7 +386,7 @@ void ClearActiveRow(int row, HDC hdc, RECT client)
 	rect.right = totalWidth;
 	rect.top = row * delegate->rowHeight();
 	rect.bottom = rect.top + delegate->rowHeight();
-	FillRect(hdc, &rect, CreateSolidBrush(RGB(255,255,255)));
+	FillRect(hdc, &rect, solidWhiteBrush);
 	//Gridlines
 	if ( delegate->drawHorizontalGridlines()){
 		DrawHorizontalGridlines(hdc, client);
@@ -425,33 +427,45 @@ void DrawCellText(HDC hdc, RECT client)
 		
 	int j = 0;
 	int left = 0;
-	int top = delegate->rowHeight();
 	for(int row = 0; row<delegate->totalRows(); row++){
 		left = 0;
 		DrawTextForRow(hdc, client, row);
-		top += delegate->rowHeight();
 	}
 }
 
-void startEditing(int row){
+LRESULT CALLBACK DetailWndProc(HWND hWnd, UINT message, WPARAM wParam,
+                               LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
+{
+	if ( message == WM_KILLFOCUS ){
+		delegate->editingFinished(hWnd, activeRow, uIdSubclass);
+	}
+	return DefSubclassProc(hWnd, message, wParam, lParam);
+}
+
+void startEditing(int previous, int row){
 	int left = 0;
-	HWND previous = HWND_TOP;
+	HWND previousWindow = HWND_TOP;
 	for(int i=0; i<numColumns; i++){
 		if( delegate->allowEditing(i) ){
 			if ( columns[i]->getEditor() == NULL ){
 				HWND editor = delegate->editorForColumn(i, hWnd, hInst);
 				SendMessage(editor, WM_SETFONT, (WPARAM)delegate->getEditFont(), 0);
+				SetWindowSubclass(editor, DetailWndProc, i, 0);
 				columns[i]->setEditor(editor);
+			} else {
+				delegate->editingFinished(columns[i]->getEditor(), previous, i); 
 			}
 			HWND editor = columns[i]->getEditor();
 			delegate->setupEditorForCell(editor, row, i);
-			SetWindowPos(editor, previous, left-scrollOffsetX, (row+1) * delegate->rowHeight() - scrollOffsetY, columns[i]->getWidth(), delegate->rowHeight(), 0);
+			SetWindowPos(editor, previousWindow, left-scrollOffsetX, (row+1) * delegate->rowHeight() - scrollOffsetY, columns[i]->getWidth(), delegate->rowHeight(), 0);
 			ShowWindow(editor, SW_SHOW);
-			previous = editor;
+			previousWindow = editor;
 		}
 		left += columns[i]->getWidth();
 	}
 }
+
+
 
 void scrollEditors(int offsetX, int offsetY){
 	for(int i=0; i<numColumns; i++){
@@ -467,7 +481,7 @@ void scrollEditors(int offsetX, int offsetY){
 
 void DrawGridElements(HDC hdc, RECT client)
 {
-	FillRect(offscreenDC, &totalArea, CreateSolidBrush(RGB(255,255,255)));
+	FillRect(offscreenDC, &totalArea, solidWhiteBrush);
 
 	DrawVerticalGridlines(hdc, client);
 	DrawHorizontalGridlines(hdc, client);
@@ -502,7 +516,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 	case WM_ACTIVATE:
 		break;
-	case WM_MOUSEMOVE:
+	case WM_KILLFOCUS:
+		OutputDebugString(L"Lost focus\n");
+	case WM_MOUSEMOVE:	
 		{
 		int mouseXPos = GET_X_LPARAM(lParam); 
 		int mouseYPos = GET_Y_LPARAM(lParam); 
@@ -609,11 +625,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if ( (yPos + scrollOffsetY) / delegate->rowHeight() < delegate->totalRows() + 1 ){
 				int previousActiveRow = activeRow;
 				activeRow = (yPos + scrollOffsetY) / delegate->rowHeight();
+				
+				RECT client;
+				GetClientRect(hWnd, &client);
+	
 				if( delegate->rowSelection() ){
 	
-					RECT client;
-					GetClientRect(hWnd, &client);
-
+				
 					RECT r2;
 					r2.left = 0;
 					r2.right = client.right;
@@ -633,8 +651,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					InvalidateRect(hWnd, NULL, true);
 
 				}
-				startEditing(activeRow-1);
+				startEditing(previousActiveRow-1, activeRow-1);
 
+				if( previousActiveRow != -1 ){
+					DrawTextForRow(offscreenDC, client, previousActiveRow-1); 
+					InvalidateRect(hWnd, NULL, true);
+				}
 			}
 		}
 		}
