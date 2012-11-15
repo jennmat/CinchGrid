@@ -53,7 +53,6 @@ wchar_t* ReferenceDelegate::cellContent(int row, int col) {
 		return buffer;
 	}
 
-	
 	if( col == 1 ){
 		return TEXT("10/22/2012");
 	}

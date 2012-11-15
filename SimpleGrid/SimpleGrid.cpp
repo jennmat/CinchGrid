@@ -9,6 +9,8 @@
 
 #define COL_SPACING 100
 
+#define TAB_CAPTURE_CLASS -100
+
 // Global Variables:
 HINSTANCE hInst;								// current instance
 HWND hWnd;
@@ -20,6 +22,9 @@ ATOM				MyRegisterClass(HINSTANCE hInstance);
 BOOL				InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
+
+
+void startEditing(int previous, int row);
 
 int activeRow = -1;
 int activeCol = -1;
@@ -43,10 +48,16 @@ HPEN headerPen;
 HPEN gridlinesPen;
 
 HBRUSH solidWhiteBrush;
+HBRUSH activeRowBrush;
 
 HDC offscreenDC;
 HBITMAP offscreenBitmap;
 RECT totalArea;
+
+HWND firstFocusedEditor;
+
+/*When the tab hits this control, move to the next row */
+HWND tabCapture;
 
 void DrawGridElements(HDC hdc, RECT client);
 
@@ -233,6 +244,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	headerPen = CreatePen(PS_SOLID, 1, RGB(210, 210, 210));
 	gridlinesPen = CreatePen(PS_SOLID, 1, RGB(210, 210, 210));
 	solidWhiteBrush = CreateSolidBrush(RGB(255,255,255));
+	activeRowBrush = CreateSolidBrush(RGB(167,205,240));
+		
 	offscreenDC = CreateCompatibleDC(GetDC(hWnd));
 	//TODO: This attempts to draw the entire grid into memory.  This could be a problem for large grids.
 	offscreenBitmap = CreateCompatibleBitmap(GetDC(hWnd), totalWidth, totalHeight);
@@ -372,9 +385,13 @@ void DrawTextForRow(HDC hdc, RECT client, int row){
 		textRect.left = left+LEFT_MARGIN;
 		textRect.right = left + c->getWidth()-1;
 		textRect.top = top+1;
-		textRect.bottom = top + delegate->rowHeight()-1;
+		textRect.bottom = top + delegate->rowHeight()-2;
 		left += c->getWidth();
-		FillRect(hdc, &textRect, solidWhiteBrush); 
+		if ( row == activeRow - 1 && delegate->rowSelection() == true ){
+			FillRect(hdc, &textRect, activeRowBrush); 
+		} else {
+			FillRect(hdc, &textRect, solidWhiteBrush); 
+		}
 		DrawText(hdc, delegate->cellContent(row, col), -1, &textRect, DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS);
 	}
 }
@@ -406,13 +423,12 @@ void DrawActiveRow(HDC hdc, RECT client)
 
 		SelectObject(hdc, activeCellPen);
 		SelectObject(hdc,GetStockObject(NULL_BRUSH));
-		HBRUSH brush = CreateSolidBrush(RGB(167,205,240));
 		RECT row;
 		row.left = 0;
 		row.right = totalWidth;
 		row.top = activeRow * delegate->rowHeight();
 		row.bottom = row.top + delegate->rowHeight();
-		FillRect(hdc, &row, brush);
+		FillRect(hdc, &row, activeRowBrush);
 		Rectangle(hdc, row.left, row.top, row.right, row.bottom);
 		DrawTextForRow(hdc, client, activeRow-1);
 	}
@@ -436,8 +452,29 @@ void DrawCellText(HDC hdc, RECT client)
 LRESULT CALLBACK DetailWndProc(HWND hWnd, UINT message, WPARAM wParam,
                                LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
 {
+	if ( message == WM_NCCALCSIZE ){
+		HDC dc = GetDC(hWnd);
+		SelectObject(dc, delegate->getEditFont());
+		TEXTMETRIC metrics;
+		GetTextMetrics(dc, &metrics);
+		const int cyBorder = (delegate->rowHeight() - metrics.tmHeight) / 2 - 3;
+		InflateRect((LPRECT)lParam, 0, -cyBorder);
+
+	}
 	if ( message == WM_KILLFOCUS ){
 		delegate->editingFinished(hWnd, activeRow, uIdSubclass);
+	}
+	if ( message == WM_SETFOCUS ){
+		if ( uIdSubclass == TAB_CAPTURE_CLASS ){
+			//delegate->editingFinished(hWnd, activeRow, uIdSubclass);
+			SetFocus(firstFocusedEditor);
+			int previousActiveRow = activeRow;
+			activeRow++;
+			if ( activeRow > delegate->totalRows() ){
+				activeRow = 1;
+			}
+			startEditing(previousActiveRow-1, activeRow-1);
+		}
 	}
 	return DefSubclassProc(hWnd, message, wParam, lParam);
 }
@@ -445,6 +482,7 @@ LRESULT CALLBACK DetailWndProc(HWND hWnd, UINT message, WPARAM wParam,
 void startEditing(int previous, int row){
 	int left = 0;
 	HWND previousWindow = HWND_TOP;
+	bool controlsCreated = false;
 	for(int i=0; i<numColumns; i++){
 		if( delegate->allowEditing(i) ){
 			if ( columns[i]->getEditor() == NULL ){
@@ -452,16 +490,30 @@ void startEditing(int previous, int row){
 				SendMessage(editor, WM_SETFONT, (WPARAM)delegate->getEditFont(), 0);
 				SetWindowSubclass(editor, DetailWndProc, i, 0);
 				columns[i]->setEditor(editor);
+				controlsCreated = true;
 			} else {
 				delegate->editingFinished(columns[i]->getEditor(), previous, i); 
 			}
 			HWND editor = columns[i]->getEditor();
 			delegate->setupEditorForCell(editor, row, i);
+			if( previousWindow == HWND_TOP ){
+				firstFocusedEditor = editor;
+			}
 			SetWindowPos(editor, previousWindow, left-scrollOffsetX, (row+1) * delegate->rowHeight() - scrollOffsetY, columns[i]->getWidth(), delegate->rowHeight(), 0);
 			ShowWindow(editor, SW_SHOW);
 			previousWindow = editor;
 		}
 		left += columns[i]->getWidth();
+	}
+
+	if ( controlsCreated == true ){
+		tabCapture = CreateWindowEx(WS_EX_CLIENTEDGE, L"STATIC", L"", WS_CHILD | WS_TABSTOP,
+			0, 0, 0, 0, hWnd, NULL, hInst, NULL);
+		
+		SetWindowSubclass(tabCapture, DetailWndProc, TAB_CAPTURE_CLASS, 0);
+				
+		SetWindowPos(tabCapture, previousWindow, 0, 0, 0, 0, 0);
+		ShowWindow(tabCapture, SW_SHOW);
 	}
 }
 
@@ -511,6 +563,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	PAINTSTRUCT ps;
 	HDC hdc;
 
+	
 
 	switch (message)
 	{
@@ -527,7 +580,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				accum += columns[i]->getWidth();
 			}
 			if ( mouseXPos - accum > 10 ){
-				//InvalidateRect(hWnd, NULL, true);
 				RECT client;
 				GetClientRect(hWnd, &client);
 
@@ -642,19 +694,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					repaint.top = activeRow * delegate->rowHeight() - 2;
 					repaint.bottom = repaint.top + delegate->rowHeight() + 4;
 					//InvalidateRect(hWnd, &repaint, true);
-					ClearActiveRow(previousActiveRow, offscreenDC, client);
+					if (previousActiveRow > 0 ){
+						ClearActiveRow(previousActiveRow, offscreenDC, client);
+					}
 					DrawActiveRow(offscreenDC, client);
 					//InvalidateRect(hWnd, &repaint, true);
 					//InvalidateRect(hWnd, &r2, true);
 					InvalidateRect(hWnd, NULL, true);
 
 				}
+
 				startEditing(previousActiveRow-1, activeRow-1);
 
 				if( previousActiveRow != -1 ){
 					DrawTextForRow(offscreenDC, client, previousActiveRow-1); 
 					InvalidateRect(hWnd, NULL, true);
 				}
+
 			}
 		}
 		}
