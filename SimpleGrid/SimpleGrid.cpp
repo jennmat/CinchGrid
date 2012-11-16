@@ -462,7 +462,7 @@ LRESULT CALLBACK DetailWndProc(HWND hWnd, UINT message, WPARAM wParam,
 
 	}
 	if ( message == WM_KILLFOCUS ){
-		delegate->editingFinished(hWnd, activeRow, uIdSubclass);
+		delegate->editingFinished(hWnd, activeRow-1, uIdSubclass);
 	}
 	if ( message == WM_SETFOCUS ){
 		if ( uIdSubclass == TAB_CAPTURE_CLASS ){
@@ -474,6 +474,13 @@ LRESULT CALLBACK DetailWndProc(HWND hWnd, UINT message, WPARAM wParam,
 				activeRow = 1;
 			}
 			startEditing(previousActiveRow-1, activeRow-1);
+			
+			if( previousActiveRow != -1 ){
+				RECT client;
+				GetClientRect(hWnd, &client);
+				DrawTextForRow(offscreenDC, client, previousActiveRow-1); 
+				InvalidateRect(hWnd, NULL, true);
+			}
 		}
 	}
 	return DefSubclassProc(hWnd, message, wParam, lParam);
