@@ -10,6 +10,7 @@
 #define COL_SPACING 100
 
 #define TAB_CAPTURE_CLASS -100
+#define REVERSE_TAB_CAPTURE_CLASS -200
 
 // Global Variables:
 HINSTANCE hInst;								// current instance
@@ -40,6 +41,7 @@ int totalWidth = 0;
 int totalHeight = 0;
 
 bool draggingHeader = false;
+bool editingInitialized = false;
 int draggedXPos = 0;
 
 int activelyDraggedColumn = -1;
@@ -55,9 +57,12 @@ HBITMAP offscreenBitmap;
 RECT totalArea;
 
 HWND firstFocusedEditor;
+HWND lastFocusedEditor;
 
 /*When the tab hits this control, move to the next row */
 HWND tabCapture;
+/* Move to the previous row when the tab hits this control */
+HWND reverseTabCapture;
 
 void DrawGridElements(HDC hdc, RECT client);
 
@@ -465,14 +470,26 @@ LRESULT CALLBACK DetailWndProc(HWND hWnd, UINT message, WPARAM wParam,
 		delegate->editingFinished(hWnd, activeRow-1, uIdSubclass);
 	}
 	if ( message == WM_SETFOCUS ){
-		if ( uIdSubclass == TAB_CAPTURE_CLASS ){
+		if ( uIdSubclass == TAB_CAPTURE_CLASS || uIdSubclass == REVERSE_TAB_CAPTURE_CLASS ){
 			//delegate->editingFinished(hWnd, activeRow, uIdSubclass);
-			SetFocus(firstFocusedEditor);
 			int previousActiveRow = activeRow;
-			activeRow++;
-			if ( activeRow > delegate->totalRows() ){
-				activeRow = 1;
+			if ( uIdSubclass == TAB_CAPTURE_CLASS ){
+				SetFocus(firstFocusedEditor);
+				activeRow++;
+				
+				if ( activeRow > delegate->totalRows() ){
+					activeRow = 1;
+				}
+			} else if ( uIdSubclass == REVERSE_TAB_CAPTURE_CLASS ){ 
+				SetFocus(lastFocusedEditor);
+				activeRow--;
+
+			
+				if ( activeRow < 1 ){
+					activeRow = delegate->totalRows();
+				}
 			}
+
 			startEditing(previousActiveRow-1, activeRow-1);
 			
 			if( previousActiveRow != -1 ){
@@ -489,7 +506,18 @@ LRESULT CALLBACK DetailWndProc(HWND hWnd, UINT message, WPARAM wParam,
 void startEditing(int previous, int row){
 	int left = 0;
 	HWND previousWindow = HWND_TOP;
-	bool controlsCreated = false;
+	if( editingInitialized == false ){
+		reverseTabCapture = CreateWindowEx(WS_EX_CLIENTEDGE, L"STATIC", L"", WS_CHILD | WS_TABSTOP,
+			0, 0, 0, 0, hWnd, NULL, hInst, NULL);
+		
+		SetWindowSubclass(reverseTabCapture, DetailWndProc, REVERSE_TAB_CAPTURE_CLASS, 0);
+				
+		SetWindowPos(reverseTabCapture, HWND_TOP, 0, 0, 0, 0, 0);
+		ShowWindow(reverseTabCapture, SW_SHOW);
+		previousWindow = reverseTabCapture;
+	} else {
+		previousWindow = reverseTabCapture;
+	}
 	for(int i=0; i<numColumns; i++){
 		if( delegate->allowEditing(i) ){
 			if ( columns[i]->getEditor() == NULL ){
@@ -497,13 +525,12 @@ void startEditing(int previous, int row){
 				SendMessage(editor, WM_SETFONT, (WPARAM)delegate->getEditFont(), 0);
 				SetWindowSubclass(editor, DetailWndProc, i, 0);
 				columns[i]->setEditor(editor);
-				controlsCreated = true;
 			} else {
 				delegate->editingFinished(columns[i]->getEditor(), previous, i); 
 			}
 			HWND editor = columns[i]->getEditor();
 			delegate->setupEditorForCell(editor, row, i);
-			if( previousWindow == HWND_TOP ){
+			if( editingInitialized == false && previousWindow == reverseTabCapture ){
 				firstFocusedEditor = editor;
 			}
 			SetWindowPos(editor, previousWindow, left-scrollOffsetX, (row+1) * delegate->rowHeight() - scrollOffsetY, columns[i]->getWidth(), delegate->rowHeight(), 0);
@@ -513,7 +540,9 @@ void startEditing(int previous, int row){
 		left += columns[i]->getWidth();
 	}
 
-	if ( controlsCreated == true ){
+	lastFocusedEditor = previousWindow;
+
+	if ( editingInitialized == false ){
 		tabCapture = CreateWindowEx(WS_EX_CLIENTEDGE, L"STATIC", L"", WS_CHILD | WS_TABSTOP,
 			0, 0, 0, 0, hWnd, NULL, hInst, NULL);
 		
@@ -522,7 +551,13 @@ void startEditing(int previous, int row){
 		SetWindowPos(tabCapture, previousWindow, 0, 0, 0, 0, 0);
 		ShowWindow(tabCapture, SW_SHOW);
 	}
+
+	SendMessage(GetFocus(), EM_SETSEL, 0, -1);
+				
+
+	editingInitialized = true;
 }
+
 
 
 
@@ -536,6 +571,7 @@ void scrollEditors(int offsetX, int offsetY){
 		}
 	}
 }
+
 
 
 void DrawGridElements(HDC hdc, RECT client)
