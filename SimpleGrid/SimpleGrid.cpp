@@ -185,6 +185,22 @@ void SetScroll(HWND hWnd)
 			
 }
 
+
+void SetupAndDrawOffscreenBitmap(){
+	RECT client;
+	GetClientRect(hWnd, &client);
+	offscreenBitmap = CreateCompatibleBitmap(GetDC(hWnd), totalWidth, max(client.bottom, totalHeight));
+	SelectObject(offscreenDC, offscreenBitmap);
+
+
+	totalArea.left = 0;
+	totalArea.right = totalWidth;
+	totalArea.bottom = max(client.bottom, totalHeight);
+	totalArea.top = 0;
+	
+	DrawGridElements(offscreenDC, totalArea);
+}
+
 //
 //   FUNCTION: InitInstance(HINSTANCE, int)
 //
@@ -221,10 +237,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	}
 
 	totalHeight = (delegate->totalRows() + 1) * delegate->rowHeight();
-	if( delegate->allowNewRows() == true ){
-		totalHeight += delegate->rowHeight();
-	}
-
+	
 	RECT client;
 	GetClientRect(hWnd, &client);
 
@@ -256,16 +269,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		
 	offscreenDC = CreateCompatibleDC(GetDC(hWnd));
 	//TODO: This attempts to draw the entire grid into memory.  This could be a problem for large grids.
-	offscreenBitmap = CreateCompatibleBitmap(GetDC(hWnd), totalWidth, client.bottom);
-	SelectObject(offscreenDC, offscreenBitmap);
-
-
-	totalArea.left = 0;
-	totalArea.right = totalWidth;
-	totalArea.bottom = client.bottom;
-	totalArea.top = 0;
-	
-	DrawGridElements(offscreenDC, totalArea);
+	SetupAndDrawOffscreenBitmap();
 
 	//SetScroll(hWnd);
 	ShowWindow(hWnd, nCmdShow);
@@ -379,7 +383,7 @@ void DrawHorizontalGridlines(HDC hdc, RECT client)
 	if( delegate->drawHorizontalGridlines() ){
 		int i = 0;
 		int bottom = client.bottom;
-		if ( delegate->allowNewRows() == false ){
+		if (  delegate->allowNewRows() == false ){
 			bottom = totalHeight+1;
 		}
 		while (i * delegate->rowHeight() < bottom ){
@@ -434,6 +438,9 @@ void ClearActiveRow(int row, HDC hdc, RECT client)
 
 void DrawActiveRow(HDC hdc, RECT client)
 {
+	if( delegate->rowSelection() == false ){
+		return;
+	}
 	if ( activeRow >= 1){
 			
 		LOGBRUSH lb = {BS_SOLID, RGB(100, 100, 100), 0}; 
@@ -496,6 +503,7 @@ LRESULT CALLBACK DetailWndProc(HWND hWnd, UINT message, WPARAM wParam,
 				if ( activeRow > delegate->totalRows() ){
 					if ( delegate->allowNewRows() ){
 						delegate->prepareNewRow(activeRow-1);
+						totalHeight = (delegate->totalRows() + 1) * delegate->rowHeight();
 					} else {
 						activeRow = 1;
 					}
@@ -740,6 +748,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			if ( delegate->allowNewRows() && clickedRow >= delegate->totalRows() ){
 				delegate->prepareNewRow(clickedRow);
+				totalHeight = (delegate->totalRows() + 1) * delegate->rowHeight();
 			}
 
 			if ( clickedRow < delegate->totalRows() ){
@@ -803,6 +812,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_SIZE:
 		RECT client;
 		GetClientRect(hWnd, &client);
+		SetupAndDrawOffscreenBitmap();
+		InvalidateRect(hWnd, NULL, true);
+
 		if( totalWidth > client.right ){
 			overflowX = true;
 		} else {
@@ -836,7 +848,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		//SetWindowOrgEx(hdc, origin.x + scrollOffsetX, origin.y + scrollOffsetY, 0);
 
 		//OffsetRect(&ps.rcPaint, scrollOffsetX, scrollOffsetY);
-
 
 		BitBlt(hdc, ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right, ps.rcPaint.bottom, offscreenDC, ps.rcPaint.left + scrollOffsetX, ps.rcPaint.top + scrollOffsetY, SRCCOPY);
 		

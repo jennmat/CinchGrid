@@ -4,7 +4,7 @@
 
 ReferenceDelegate::ReferenceDelegate(){
 	int i,j;
-	rowCount = 10;
+	rowCount = 100;
 
 	for(i=0;i<MAX_ROWS;i++){
 		for(j=0; j<TOTAL_COLS; j++){
@@ -84,12 +84,12 @@ int ReferenceDelegate::rowHeight(){
 }
 
 bool ReferenceDelegate::rowSelection() {
-	return false;
+	return true;
 }
 
 bool ReferenceDelegate::allowEditing(int col){
 	if( col == 0 ) return false;
-	return true;
+	return false;
 }
 
 HWND CreateComboBox(HWND parent, HINSTANCE hInst){
@@ -134,7 +134,7 @@ HWND ReferenceDelegate::editorForColumn(int col, HWND parent, HINSTANCE hInst){
 
 	return CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP,
 		0, 0, 0, 0, parent, NULL, hInst, NULL);
-
+	
 }
 
 void ReferenceDelegate::editingFinished(HWND editor, int row, int col)
@@ -148,7 +148,7 @@ void ReferenceDelegate::editingFinished(HWND editor, int row, int col)
 }
 
 bool ReferenceDelegate::allowNewRows() {
-	return true;
+	return false;
 }
 
 void ReferenceDelegate::prepareNewRow(int row){
