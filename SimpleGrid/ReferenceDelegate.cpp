@@ -123,14 +123,14 @@ HWND CreateComboBox(HWND parent, HINSTANCE hInst){
 }
 
 HWND ReferenceDelegate::editorForColumn(int col, HWND parent, HINSTANCE hInst){
-	//if ( col == 1 ){
-		//return CreateWindowEx(0, DATETIMEPICK_CLASS, TEXT("DateTime"), WS_CHILD|WS_VISIBLE|WS_TABSTOP,
-			//0, 0, 0, 0, parent, NULL, hInst, NULL);
+	if ( col == 1 ){
+		return CreateWindowEx(0, DATETIMEPICK_CLASS, TEXT("DateTime"), WS_CHILD|WS_VISIBLE|WS_TABSTOP,
+			0, 0, 0, 0, parent, NULL, hInst, NULL);
 
 	//} else if ( col == 2 ) {
 
 		//return CreateComboBox(parent,hInst);
-	//}
+	}
 
 	return CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP,
 		0, 0, 0, 0, parent, NULL, hInst, NULL);

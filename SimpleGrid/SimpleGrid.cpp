@@ -471,13 +471,16 @@ LRESULT CALLBACK DetailWndProc(HWND hWnd, UINT message, WPARAM wParam,
                                LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
 {
 	if ( message == WM_NCCALCSIZE ){
-		HDC dc = GetDC(hWnd);
-		SelectObject(dc, delegate->getEditFont());
-		TEXTMETRIC metrics;
-		GetTextMetrics(dc, &metrics);
-		const int cyBorder = (delegate->rowHeight() - metrics.tmHeight) / 2 - 3;
-		InflateRect((LPRECT)lParam, 0, -cyBorder);
-
+		wchar_t name[80];
+		GetClassName(hWnd, name, 80);
+		if ( wcscmp(name, TEXT("Edit")) == 0 ){
+			HDC dc = GetDC(hWnd);
+			SelectObject(dc, delegate->getEditFont());
+			TEXTMETRIC metrics;
+			GetTextMetrics(dc, &metrics);
+			const int cyBorder = (delegate->rowHeight() - metrics.tmHeight) / 2 - 3;
+			InflateRect((LPRECT)lParam, 0, -cyBorder);
+		}
 	}
 	if ( message == WM_KILLFOCUS ){
 		delegate->editingFinished(hWnd, activeRow-1, uIdSubclass);
