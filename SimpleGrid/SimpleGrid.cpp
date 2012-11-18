@@ -220,7 +220,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		totalWidth += delegate->columnWidth(i);
 	}
 
-	totalHeight = (delegate->totalRows() + 1) * delegate->rowHeight() + delegate->totalRows();
+	totalHeight = (delegate->totalRows() + 1) * delegate->rowHeight();
+	if( delegate->allowNewRows() == true ){
+		totalHeight += delegate->rowHeight();
+	}
 
 	RECT client;
 	GetClientRect(hWnd, &client);
@@ -253,13 +256,13 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		
 	offscreenDC = CreateCompatibleDC(GetDC(hWnd));
 	//TODO: This attempts to draw the entire grid into memory.  This could be a problem for large grids.
-	offscreenBitmap = CreateCompatibleBitmap(GetDC(hWnd), totalWidth, totalHeight);
+	offscreenBitmap = CreateCompatibleBitmap(GetDC(hWnd), totalWidth, client.bottom);
 	SelectObject(offscreenDC, offscreenBitmap);
 
 
 	totalArea.left = 0;
 	totalArea.right = totalWidth;
-	totalArea.bottom = totalHeight;
+	totalArea.bottom = client.bottom;
 	totalArea.top = 0;
 	
 	DrawGridElements(offscreenDC, totalArea);
@@ -350,13 +353,17 @@ void DrawHeader(HDC hdc, RECT client){
 void DrawVerticalGridlines(HDC hdc, RECT client)
 {
 	SelectObject(hdc, gridlinesPen);
-
+	
 	if ( delegate->drawVerticalGridlines() ){
 		int left = 0;
+		int bottom = client.bottom;
+		if ( !delegate->allowNewRows() ){
+			bottom = totalHeight;
+		}
 		for(int i=0; i<numColumns; i++){
 			GridColumn* col = columns[i];
 			MoveToEx(hdc, left + col->getWidth()-1, delegate->rowHeight()+1, NULL);
-			LineTo(hdc, left + col->getWidth()-1, (delegate->totalRows()+1)*delegate->rowHeight());
+			LineTo(hdc, left + col->getWidth()-1, bottom );
 			left += col->getWidth();
 		}
 	} else {
@@ -370,9 +377,15 @@ void DrawHorizontalGridlines(HDC hdc, RECT client)
 {
 	SelectObject(hdc, gridlinesPen);
 	if( delegate->drawHorizontalGridlines() ){
-		for(int i=1; i<delegate->totalRows()+2; i+=1){
+		int i = 0;
+		int bottom = client.bottom;
+		if ( delegate->allowNewRows() == false ){
+			bottom = totalHeight+1;
+		}
+		while (i * delegate->rowHeight() < bottom ){
 			MoveToEx(hdc, 0, i*delegate->rowHeight(), NULL);
 			LineTo(hdc, totalWidth, i*delegate->rowHeight());
+			i+= 1;
 		}
 	} else {
 		//Always draw bottom gridline
@@ -478,7 +491,11 @@ LRESULT CALLBACK DetailWndProc(HWND hWnd, UINT message, WPARAM wParam,
 				activeRow++;
 				
 				if ( activeRow > delegate->totalRows() ){
-					activeRow = 1;
+					if ( delegate->allowNewRows() ){
+						delegate->prepareNewRow(activeRow-1);
+					} else {
+						activeRow = 1;
+					}
 				}
 			} else if ( uIdSubclass == REVERSE_TAB_CAPTURE_CLASS ){ 
 				SetFocus(lastFocusedEditor);
@@ -491,13 +508,14 @@ LRESULT CALLBACK DetailWndProc(HWND hWnd, UINT message, WPARAM wParam,
 			}
 
 			startEditing(previousActiveRow-1, activeRow-1);
-			
+	
 			if( previousActiveRow != -1 ){
 				RECT client;
 				GetClientRect(hWnd, &client);
 				DrawTextForRow(offscreenDC, client, previousActiveRow-1); 
 				InvalidateRect(hWnd, NULL, true);
 			}
+
 		}
 	}
 	return DefSubclassProc(hWnd, message, wParam, lParam);
@@ -673,7 +691,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 
 			totalArea.right = totalWidth;
-			offscreenBitmap = CreateCompatibleBitmap(GetDC(hWnd), totalWidth, totalHeight);
+			offscreenBitmap = CreateCompatibleBitmap(GetDC(hWnd), totalWidth, totalHeight+1);
 			SelectObject(offscreenDC, offscreenBitmap);
 
 			DrawGridElements(offscreenDC, totalArea);
@@ -715,7 +733,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					break;
 				}
 			}
-			if ( (yPos + scrollOffsetY) / delegate->rowHeight() < delegate->totalRows() + 1 ){
+			int clickedRow = (yPos + scrollOffsetY) / delegate->rowHeight() - 1;
+
+			if ( delegate->allowNewRows() && clickedRow >= delegate->totalRows() ){
+				delegate->prepareNewRow(clickedRow);
+			}
+
+			if ( clickedRow < delegate->totalRows() ){
 				int previousActiveRow = activeRow;
 				activeRow = (yPos + scrollOffsetY) / delegate->rowHeight();
 				

@@ -23,16 +23,20 @@ public:
 	virtual HWND editorForColumn(int, HWND parent, HINSTANCE hInst) = 0;
 	virtual void editingFinished(HWND editor, int row, int col) = 0;
 
+	virtual bool allowNewRows() = 0;
+	virtual void prepareNewRow(int row) = 0;
+
 	virtual HFONT getFont()=0;
 	virtual HFONT getEditFont() = 0;
 };
 
-#define TOTAL_ROWS 10
+#define MAX_ROWS 100
 #define TOTAL_COLS 3
 
 class ReferenceDelegate : public GridDelegate {
 private:
-	wchar_t* data[TOTAL_ROWS][TOTAL_COLS];
+	int rowCount;
+	wchar_t* data[MAX_ROWS][TOTAL_COLS];
 public:
 	ReferenceDelegate();
 	int totalRows();
@@ -55,6 +59,9 @@ public:
 	void setupEditorForCell(HWND editor, int row, int col);
 	HWND editorForColumn(int, HWND parent, HINSTANCE hInst) ;
 	void editingFinished(HWND editor, int row, int col);
+
+	bool allowNewRows();
+	void prepareNewRow(int row);
 
 	HFONT getFont();
 	HFONT getEditFont();

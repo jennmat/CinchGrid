@@ -4,7 +4,9 @@
 
 ReferenceDelegate::ReferenceDelegate(){
 	int i,j;
-	for(i=0;i<TOTAL_ROWS;i++){
+	rowCount = 10;
+
+	for(i=0;i<MAX_ROWS;i++){
 		for(j=0; j<TOTAL_COLS; j++){
 			data[i][j]=NULL;
 		}
@@ -16,7 +18,7 @@ int ReferenceDelegate::totalColumns(){
 }
 
 int ReferenceDelegate::totalRows(){
-	return TOTAL_ROWS;
+	return rowCount;
 }
 
 int ReferenceDelegate::columnWidth(int column){
@@ -143,7 +145,17 @@ void ReferenceDelegate::editingFinished(HWND editor, int row, int col)
 	data[row][col] = (wchar_t *)malloc(100*sizeof(TCHAR));
 	GetWindowText(editor, data[row][col], 100);
 
-	
+}
+
+bool ReferenceDelegate::allowNewRows() {
+	return true;
+}
+
+void ReferenceDelegate::prepareNewRow(int row){
+	rowCount++;
+	data[row][0] = NULL;
+	data[row][1] = TEXT("");
+	data[row][2] = TEXT("");
 }
 
 void ReferenceDelegate::setupEditorForCell(HWND editor, int row, int col){
