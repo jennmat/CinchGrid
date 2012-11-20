@@ -190,6 +190,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		//SetWindowOrgEx(hdc, origin.x, origin.y, 0);
 		}
 		break;
+	case WM_MOUSEWHEEL:
+		break;
+
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;

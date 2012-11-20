@@ -194,12 +194,7 @@ void CinchGrid::DrawHeaderDragGuideline(HDC hdc, RECT client)
 }
 
 void CinchGrid::DrawHeader(HDC hdc, RECT client){
-	if ( delegate->stickyHeaders() ){
-		POINT origin;
-		GetWindowOrgEx(hdc, &origin);
-		SetWindowOrgEx(hdc, origin.x , origin.y - scrollOffsetY, 0);
-		OffsetRect(&client, 0, -scrollOffsetY);
-	}
+	
 
 	SelectObject(hdc, headerPen);	
 
@@ -248,14 +243,6 @@ void CinchGrid::DrawHeader(HDC hdc, RECT client){
 		left += i;
 		j++;
 	}
-
-	if ( delegate->stickyHeaders() ){
-		POINT origin;
-		GetWindowOrgEx(hdc, &origin);
-		SetWindowOrgEx(hdc, origin.x, origin.y + scrollOffsetY, 0);
-		OffsetRect(&client, 0, scrollOffsetY);
-	}
-
 }
 
 void CinchGrid::DrawVerticalGridlines(HDC hdc, RECT client)
@@ -398,6 +385,9 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		break;
 	case WM_ACTIVATE:
 		break;
+	case WM_MOUSEACTIVATE:
+		SetFocus(hWnd);
+		return MA_ACTIVATE;
 	case WM_MOUSEMOVE:	
 		{
 		int mouseXPos = GET_X_LPARAM(lParam); 
@@ -722,12 +712,18 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		{
 		int zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
 		self->scrollOffsetY += 0 - zDelta;
-		if ( self->scrollOffsetY >= 0 )  {
-			SetScrollPos(hWnd, SB_VERT, self->scrollOffsetY, true);
-			InvalidateRect(hWnd, NULL, true);
-		} else {
+		RECT client;
+		GetClientRect(self->hWnd, &client);
+		if( self->scrollOffsetY > self->totalHeight - client.bottom ){
+			self->scrollOffsetY = self->totalHeight - client.bottom;
+
+		} else if ( self->scrollOffsetY < 0 ){
 			self->scrollOffsetY = 0;
+		} else {
+			self->scrollEditors(0, 0-zDelta);
 		}
+		SetScrollPos(hWnd, SB_VERT, self->scrollOffsetY, true);
+		InvalidateRect(hWnd, NULL, true);
 		}
 		break;
 	default:
@@ -890,7 +886,6 @@ void CinchGrid::DrawGridElements(HDC hdc, RECT client)
 	DrawActiveRow(hdc, client);
 	DrawHeaderDragGuideline(hdc, client);
 
-		
 	DrawHeader(hdc, client);
 }
 
