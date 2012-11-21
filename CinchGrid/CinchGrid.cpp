@@ -93,6 +93,7 @@ CinchGrid::CinchGrid(HWND h, HINSTANCE inst){
 		}
 	}
 
+	
 	int left = 0;
 	for(int i=0; i<numColumns; i++){
 		GridColumn* col = columns[i];
@@ -383,11 +384,9 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		return TRUE;
 		}
 		break;
-	case WM_ACTIVATE:
-		break;
-	case WM_MOUSEACTIVATE:
-		SetFocus(hWnd);
-		return MA_ACTIVATE;
+	//case WM_MOUSEACTIVATE:
+		//SetFocus(hWnd);
+		//return MA_ACTIVATE;
 	case WM_MOUSEMOVE:	
 		{
 		int mouseXPos = GET_X_LPARAM(lParam); 
@@ -540,6 +539,8 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 			}
 		}
 		}
+		break;
+
 	case WM_COMMAND:
 		wmId    = LOWORD(wParam);
 		wmEvent = HIWORD(wParam);
@@ -574,6 +575,7 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		//SetWindowOrgEx(hdc, origin.x + scrollOffsetX, origin.y + scrollOffsetY, 0);
 
 		//OffsetRect(&ps.rcPaint, scrollOffsetX, scrollOffsetY);
+		
 
 		if( self != NULL ){
 			BitBlt(hdc, ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right, ps.rcPaint.bottom, self->offscreenDC, ps.rcPaint.left + self->scrollOffsetX, ps.rcPaint.top + self->scrollOffsetY, SRCCOPY);
@@ -710,20 +712,24 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		}
 	case WM_MOUSEWHEEL:
 		{
-		int zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-		self->scrollOffsetY += 0 - zDelta;
-		RECT client;
-		GetClientRect(self->hWnd, &client);
-		if( self->scrollOffsetY > self->totalHeight - client.bottom ){
-			self->scrollOffsetY = self->totalHeight - client.bottom;
-
-		} else if ( self->scrollOffsetY < 0 ){
-			self->scrollOffsetY = 0;
-		} else {
-			self->scrollEditors(0, 0-zDelta);
-		}
-		SetScrollPos(hWnd, SB_VERT, self->scrollOffsetY, true);
-		InvalidateRect(hWnd, NULL, true);
+		if( self->overflowY ){
+			int zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+			int prevOffsetY = self->scrollOffsetY;
+			self->scrollOffsetY += 0 - zDelta;
+			RECT client;
+			GetClientRect(self->hWnd, &client);
+			if( self->scrollOffsetY > self->totalHeight - client.bottom ){
+				self->scrollOffsetY = self->totalHeight - client.bottom;
+			
+			} else if ( self->scrollOffsetY < 0 ){
+				self->scrollOffsetY = 0;
+			}
+		
+			self->scrollEditors(0, self->scrollOffsetY - prevOffsetY);
+		
+			SetScrollPos(hWnd, SB_VERT, self->scrollOffsetY, true);
+			InvalidateRect(hWnd, NULL, true);
+			}
 		}
 		break;
 	default:

@@ -139,6 +139,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	SetWindowPos(gridWindow, HWND_TOP, 0, 0, client.right, client.bottom, 0);
 	ShowWindow(gridWindow, nCmdShow);
 
+	
+
 	return TRUE;
 }
 
