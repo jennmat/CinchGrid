@@ -31,7 +31,7 @@ public:
 };
 
 #define MAX_ROWS 100
-#define TOTAL_COLS 3
+#define TOTAL_COLS 10
 
 class ReferenceDelegate : public GridDelegate {
 private:

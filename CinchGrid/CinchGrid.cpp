@@ -598,15 +598,13 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		int cmd = LOWORD(wParam);
 		RECT client;
 		GetClientRect(hWnd, &client);
-			
-		if ( cmd == SB_THUMBPOSITION ){
+		wchar_t d[90];
+		
+		if ( cmd == SB_THUMBPOSITION || cmd == SB_THUMBTRACK ){
 			SetScrollPos(hWnd, SB_VERT, ypos, true);
-			if ( self->scrollOffsetY < ypos) {
-				self->scrollEditors(0, self->scrollOffsetY + ypos);
-			}else{
-				self->scrollEditors(0, self->scrollOffsetY - ypos);
-			}
+			int lastY = self->scrollOffsetY;
 			self->scrollOffsetY = ypos;
+			self->scrollEditors(0, self->scrollOffsetY - lastY);
 			InvalidateRect(hWnd, NULL, true);
 		} else if ( cmd == SB_PAGEDOWN ){
 			self->scrollOffsetY += client.bottom;
@@ -651,14 +649,11 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		{
 		int xpos = HIWORD(wParam);
 		int cmd = LOWORD(wParam);
-		if ( cmd == SB_THUMBPOSITION ){
+		if ( cmd == SB_THUMBPOSITION || cmd == SB_THUMBTRACK ){
 			SetScrollPos(hWnd, SB_HORZ, xpos, true);
-			if ( self->scrollOffsetX < xpos) {
-				self->scrollEditors(self->scrollOffsetX - xpos, 0);
-			}else{
-				self->scrollEditors(self->scrollOffsetX + xpos, 0);
-			}
+			int lastX = self->scrollOffsetX;
 			self->scrollOffsetX = xpos;
+			self->scrollEditors(self->scrollOffsetX - lastX, 0);
 			InvalidateRect(hWnd, NULL, true);
 		} else if ( cmd == SB_PAGERIGHT ){
 			RECT client;
