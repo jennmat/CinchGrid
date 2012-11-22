@@ -223,7 +223,7 @@ void CinchGrid::DrawHeader(HDC hdc, RECT client, bool fromPaintRoutine){
 		LineTo(hdc, left+i-1, delegate->rowHeight());
 		TRIVERTEX vertex[2] ;
 		vertex[0].x     = left;
-		vertex[0].y     = 1;
+		vertex[0].y     = 0;
 		vertex[0].Red   = 0xf000;
 		vertex[0].Green = 0xf000;
 		vertex[0].Blue  = 0xf000;
