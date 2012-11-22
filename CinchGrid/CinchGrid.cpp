@@ -184,7 +184,7 @@ void CinchGrid::SetupAndDrawOffscreenBitmap(){
 	DrawGridElements(offscreenDC, totalArea);
 }
 
-void CinchGrid::DrawHeaderDragGuideline(HDC hdc, RECT client)
+void CinchGrid::DrawHeaderDragGuideline(HDC hdc, RECT client )
 {
 	if ( draggingHeader == true ){
 		SelectObject(hdc, headerPen);	
@@ -194,7 +194,16 @@ void CinchGrid::DrawHeaderDragGuideline(HDC hdc, RECT client)
 	}
 }
 
-void CinchGrid::DrawHeader(HDC hdc, RECT client){
+void CinchGrid::DrawHeader(HDC hdc, RECT client, bool fromPaintRoutine){
+	
+	if ( delegate->stickyHeaders() == true && !fromPaintRoutine ){
+		//This will be drawn directly in the paint routine.
+		return;
+	}
+	SetBkMode(hdc, TRANSPARENT);
+
+	HFONT hFont = delegate->getFont();
+	SelectObject(hdc, hFont);
 	
 
 	SelectObject(hdc, headerPen);	
@@ -384,9 +393,9 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		return TRUE;
 		}
 		break;
-	//case WM_MOUSEACTIVATE:
-		//SetFocus(hWnd);
-		//return MA_ACTIVATE;
+	case WM_MOUSEACTIVATE:
+		SetFocus(hWnd);
+		return MA_ACTIVATE;
 	case WM_MOUSEMOVE:	
 		{
 		int mouseXPos = GET_X_LPARAM(lParam); 
@@ -583,7 +592,12 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 			if( self->draggingHeader ){
 				self->DrawHeaderDragGuideline(hdc, ps.rcPaint);
 			}
+
+			if ( self->delegate->stickyHeaders() ){
+				self->DrawHeader(hdc, ps.rcPaint, true);
+			}
 		}
+
 		EndPaint(hWnd, &ps);
 
 		//SetWindowOrgEx(hdc, origin.x, origin.y, 0);
@@ -887,7 +901,7 @@ void CinchGrid::DrawGridElements(HDC hdc, RECT client)
 	DrawActiveRow(hdc, client);
 	DrawHeaderDragGuideline(hdc, client);
 
-	DrawHeader(hdc, client);
+	DrawHeader(hdc, client, false);
 }
 
 

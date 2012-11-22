@@ -55,9 +55,9 @@ wchar_t* ReferenceDelegate::cellContent(int row, int col) {
 		return buffer;
 	}
 
-	if( col == 1 ){
-		return TEXT("10/22/2012");
-	}
+	//if( col == 1 ){
+	//		return TEXT("");
+	//	}
 	return TEXT("Random Text");
 }
 
@@ -80,16 +80,16 @@ bool ReferenceDelegate::drawVerticalGridlines(){
 }
 
 int ReferenceDelegate::rowHeight(){
-	return 32;
+	return 30;
 }
 
 bool ReferenceDelegate::rowSelection() {
-	return false;
+	return true;
 }
 
 bool ReferenceDelegate::allowEditing(int col){
 	if( col == 0 ) return false;
-	return true;
+	return false;
 }
 
 HWND CreateComboBox(HWND parent, HINSTANCE hInst){
@@ -123,14 +123,19 @@ HWND CreateComboBox(HWND parent, HINSTANCE hInst){
 }
 
 HWND ReferenceDelegate::editorForColumn(int col, HWND parent, HINSTANCE hInst){
-	if ( col == 1 ){
-		return CreateWindowEx(0, DATETIMEPICK_CLASS, TEXT("DateTime"), WS_CHILD|WS_VISIBLE|WS_TABSTOP,
-			0, 0, 0, 0, parent, NULL, hInst, NULL);
+	//if ( col == 1 ){
+		//return CreateWindowEx(0, DATETIMEPICK_CLASS, TEXT("DateTime"), WS_CHILD|WS_VISIBLE|WS_TABSTOP,
+		//	0, 0, 0, 0, parent, NULL, hInst, NULL);
 
 	//} else if ( col == 2 ) {
 
 		//return CreateComboBox(parent,hInst);
-	}
+	//}
+	//if ( col == 1 ){
+		//return CreateWindowEx(0, L"BUTTON", L"", WS_CHILD|WS_VISIBLE|BS_AUTOCHECKBOX|WS_TABSTOP,
+		//0, 0, 0, 0, parent, NULL, hInst, NULL);
+
+	//}
 
 	return CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP,
 		0, 0, 0, 0, parent, NULL, hInst, NULL);

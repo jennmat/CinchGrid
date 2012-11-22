@@ -73,7 +73,7 @@ private:
 	void SetupAndDrawOffscreenBitmap();
 	void DrawGridElements(HDC hdc, RECT client);
 	void DrawHeaderDragGuideline(HDC hdc, RECT client);
-	void DrawHeader(HDC hdc, RECT client);
+	void DrawHeader(HDC hdc, RECT client, bool fromPaintRoutine );
 	void DrawVerticalGridlines(HDC hdc, RECT client);
 	void DrawHorizontalGridlines(HDC hdc, RECT client);
 	void DrawTextForRow(HDC hdc, RECT client, int row);
