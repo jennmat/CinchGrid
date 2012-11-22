@@ -353,7 +353,7 @@ void CinchGrid::DrawActiveRow(HDC hdc, RECT client)
 		row.left = 0;
 		row.right = totalWidth;
 		row.top = activeRow * delegate->rowHeight();
-		row.bottom = row.top + delegate->rowHeight();
+		row.bottom = row.top + delegate->rowHeight()+1;
 		FillRect(hdc, &row, activeRowBrush);
 		Rectangle(hdc, row.left, row.top, row.right, row.bottom);
 		DrawTextForRow(hdc, client, activeRow-1);
