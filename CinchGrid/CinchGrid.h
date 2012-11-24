@@ -31,6 +31,11 @@ private:
 	int scrollOffsetX;// = 0;
 	int scrollOffsetY;// = 0;
 
+	int offscreenWidth;
+	int offscreenHeight;
+
+	int windowOffsetY;
+
 	bool overflowX;// = 0;
 	bool overflowY;// = 0;
 
@@ -70,6 +75,7 @@ private:
 	void SetScroll(HWND hWnd);
 
 	/* Painting */
+	void AdjustWindow();
 	void SetupAndDrawOffscreenBitmap();
 	void DrawGridElements(HDC hdc, RECT client);
 	void DrawHeaderDragGuideline(HDC hdc, RECT client);

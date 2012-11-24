@@ -6,6 +6,8 @@
 
 #define MAX_LOADSTRING 100
 
+#define MAX_OFFSCREEN_WIDTH 400
+#define MAX_OFFSCREEN_HEIGHT 400
 
 TCHAR szClassName[] = _T("CinchGrid");
  
@@ -57,6 +59,8 @@ CinchGrid::CinchGrid(HWND h, HINSTANCE inst){
 
 	scrollOffsetX = 0;
 	scrollOffsetY = 0;
+
+	windowOffsetY = 0;
 
 	overflowX = 0;
 	overflowY = 0;
@@ -110,8 +114,6 @@ CinchGrid::CinchGrid(HWND h, HINSTANCE inst){
 	activeRowBrush = CreateSolidBrush(RGB(222,235,250));
 		
 	offscreenDC = CreateCompatibleDC(GetDC(hWnd));
-	//TODO: This attempts to draw the entire grid into memory.  This could be a problem for large grids.
-	SetupAndDrawOffscreenBitmap();
 }
 
 
@@ -168,20 +170,42 @@ void CinchGrid::SetScroll(HWND hWnd)
 			
 }
 
+void CinchGrid::AdjustWindow(){
+
+	//totalHeight
+	//windowheight
+
+	RECT client;
+	GetWindowRect(hWnd, &client);
+
+	if ( scrollOffsetY + client.bottom > windowOffsetY + offscreenHeight ){
+		windowOffsetY =  scrollOffsetY - (offscreenHeight / 2);
+		SetupAndDrawOffscreenBitmap();
+	}
+}
 
 void CinchGrid::SetupAndDrawOffscreenBitmap(){
 	RECT client;
  	GetClientRect(hWnd, &client);
-	offscreenBitmap = CreateCompatibleBitmap(GetDC(hWnd), max(client.right, totalWidth), max(client.bottom, totalHeight));
+	
+
+	offscreenWidth = max(client.right, min(totalWidth, MAX_OFFSCREEN_WIDTH));
+	offscreenHeight = max(0 /*client.bottom*/, min(totalHeight, MAX_OFFSCREEN_HEIGHT));
+
+	offscreenBitmap = CreateCompatibleBitmap(GetDC(hWnd), offscreenWidth, offscreenHeight);
 	SelectObject(offscreenDC, offscreenBitmap);
 
-
 	totalArea.left = 0;
-	totalArea.right = max(client.right, totalWidth);
-	totalArea.bottom = max(client.bottom, totalHeight);
+	totalArea.right = offscreenWidth;
+	totalArea.bottom = offscreenHeight;
 	totalArea.top = 0;
 	
+	SetWindowOrgEx(offscreenDC, 0, 0-windowOffsetY, 0);
+	//OffsetWindowOrgEx(offscreenDC, 0, 100, 0);
+	//OffsetRect(&totalArea, 0, -100);
 	DrawGridElements(offscreenDC, totalArea);
+
+	SetWindowOrgEx(offscreenDC, 0, 0, 0);
 }
 
 void CinchGrid::DrawHeaderDragGuideline(HDC hdc, RECT client )
@@ -275,7 +299,6 @@ void CinchGrid::DrawVerticalGridlines(HDC hdc, RECT client)
 		MoveToEx(hdc, totalWidth, 0, NULL);
 		LineTo(hdc, totalWidth, totalHeight);
 	}
-
 }
 
 void CinchGrid::DrawHorizontalGridlines(HDC hdc, RECT client)
@@ -285,17 +308,21 @@ void CinchGrid::DrawHorizontalGridlines(HDC hdc, RECT client)
 		int i = 0;
 		int bottom = client.bottom;
 		if (  delegate->allowNewRows() == false ){
-			bottom = totalHeight+1;
+			bottom = client.bottom+1;
 		}
 		while (i * delegate->rowHeight() < bottom ){
-			MoveToEx(hdc, 0, i*delegate->rowHeight(), NULL);
-			LineTo(hdc, totalWidth, i*delegate->rowHeight());
+			if( i * delegate->rowHeight() >= 0 ){
+				MoveToEx(hdc, 0, i*delegate->rowHeight()+client.top, NULL);
+				LineTo(hdc, totalWidth, i*delegate->rowHeight() + client.top);
+			}
 			i+= 1;
 		}
 	} else {
 		//Always draw bottom gridline
-		MoveToEx(hdc, 0, totalHeight-1, NULL);
-		LineTo(hdc, totalWidth, totalHeight-1);
+		if ( totalHeight < client.bottom ){
+			MoveToEx(hdc, 0, totalHeight-1, NULL);
+			LineTo(hdc, totalWidth, totalHeight-1);
+		}
 	}
 }
 
@@ -369,7 +396,7 @@ void CinchGrid::DrawCellText(HDC hdc, RECT client)
 		
 	int j = 0;
 	int left = 0;
-	for(int row = 0; row<delegate->totalRows(); row++){
+	for(int row = 0; row<delegate->totalRows() && row*delegate->rowHeight() < client.bottom; row++){
 		left = 0;
 		DrawTextForRow(hdc, client, row);
 	}
@@ -587,7 +614,7 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		
 
 		if( self != NULL ){
-			BitBlt(hdc, ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right, ps.rcPaint.bottom, self->offscreenDC, ps.rcPaint.left + self->scrollOffsetX, ps.rcPaint.top + self->scrollOffsetY, SRCCOPY);
+			BitBlt(hdc, ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right, ps.rcPaint.bottom, self->offscreenDC, ps.rcPaint.left + self->scrollOffsetX, ps.rcPaint.top + self->scrollOffsetY + self->windowOffsetY, SRCCOPY);
 		
 			if( self->draggingHeader ){
 				self->DrawHeaderDragGuideline(hdc, ps.rcPaint);
@@ -609,16 +636,16 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 	case WM_VSCROLL:
 		{
 		int ypos = HIWORD(wParam);
-		int cmd = LOWORD(wParam);
+		int cmd = LOWORD(wParam); 
 		RECT client;
 		GetClientRect(hWnd, &client);
-		wchar_t d[90];
 		
 		if ( cmd == SB_THUMBPOSITION || cmd == SB_THUMBTRACK ){
 			SetScrollPos(hWnd, SB_VERT, ypos, true);
 			int lastY = self->scrollOffsetY;
 			self->scrollOffsetY = ypos;
 			self->scrollEditors(0, self->scrollOffsetY - lastY);
+			self->AdjustWindow();
 			InvalidateRect(hWnd, NULL, true);
 		} else if ( cmd == SB_PAGEDOWN ){
 			self->scrollOffsetY += client.bottom;
@@ -628,6 +655,7 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 				self->scrollEditors(0, client.bottom);				
 			}
 			SetScrollPos(hWnd, SB_VERT, self->scrollOffsetY, true);
+			self->AdjustWindow();
 			InvalidateRect(hWnd, NULL, true);
 		} else if ( cmd == SB_PAGEUP ){
 			self->scrollOffsetY -= client.bottom;
@@ -637,6 +665,7 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 				self->scrollEditors(0, 0 - client.bottom);
 			}
 			SetScrollPos(hWnd, SB_VERT, self->scrollOffsetY, true);
+			self->AdjustWindow();
 			InvalidateRect(hWnd, NULL, true);
 		} else if ( cmd == SB_LINEDOWN ){
 			self->scrollOffsetY += self->delegate->rowHeight();
@@ -645,6 +674,7 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 			}	
 			SetScrollPos(hWnd, SB_VERT, self->scrollOffsetY, true);
 			self->scrollEditors(0, self->delegate->rowHeight());
+			self->AdjustWindow();
 			InvalidateRect(hWnd, NULL, true);
 		} else if ( cmd == SB_LINEUP ){
 			self->scrollOffsetY -= self->delegate->rowHeight();
@@ -653,6 +683,7 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 			} else {
 				self->scrollEditors(0, 0 - self->delegate->rowHeight());
 				SetScrollPos(hWnd, SB_VERT, self->scrollOffsetY, true);
+				self->AdjustWindow();
 				InvalidateRect(hWnd, NULL, true);
 			}
 			
@@ -668,6 +699,7 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 			int lastX = self->scrollOffsetX;
 			self->scrollOffsetX = xpos;
 			self->scrollEditors(self->scrollOffsetX - lastX, 0);
+			self->AdjustWindow();
 			InvalidateRect(hWnd, NULL, true);
 		} else if ( cmd == SB_PAGERIGHT ){
 			RECT client;
@@ -679,6 +711,7 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 				self->scrollEditors(client.right, 0);
 			}
 			SetScrollPos(hWnd, SB_HORZ, self->scrollOffsetX, true);
+			self->AdjustWindow();
 			InvalidateRect(hWnd, NULL, true);
 		
 		} else if ( cmd == SB_PAGELEFT ){
@@ -691,6 +724,7 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 				self->scrollEditors(-client.right, 0);
 			}
 			SetScrollPos(hWnd, SB_HORZ, self->scrollOffsetX, true);
+			self->AdjustWindow();
 			InvalidateRect(hWnd, NULL, true);
 		} else if ( cmd == SB_LINELEFT ) {
 			RECT client;
@@ -702,6 +736,7 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 				self->scrollEditors(-10, 0);
 			}
 			SetScrollPos(hWnd, SB_HORZ, self->scrollOffsetX, true);
+			self->AdjustWindow();
 			InvalidateRect(hWnd, NULL, true);
 
 		} else if ( cmd == SB_LINERIGHT ){
@@ -715,6 +750,7 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 				self->scrollEditors(10, 0);
 			}
 			SetScrollPos(hWnd, SB_HORZ, self->scrollOffsetX, true);
+			self->AdjustWindow();
 			InvalidateRect(hWnd, NULL, true);
 		}
 		return 0;
@@ -737,6 +773,7 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 			self->scrollEditors(0, self->scrollOffsetY - prevOffsetY);
 		
 			SetScrollPos(hWnd, SB_VERT, self->scrollOffsetY, true);
+			self->AdjustWindow();
 			InvalidateRect(hWnd, NULL, true);
 			}
 		}

@@ -4,7 +4,7 @@
 
 ReferenceDelegate::ReferenceDelegate(){
 	int i,j;
-	rowCount = 100;
+	rowCount = 3000;
 
 	for(i=0;i<MAX_ROWS;i++){
 		for(j=0; j<TOTAL_COLS; j++){
