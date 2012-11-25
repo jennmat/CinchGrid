@@ -34,7 +34,7 @@ private:
 	int offscreenWidth;
 	int offscreenHeight;
 
-	int windowOffsetY;
+	long windowOffsetY;
 
 	bool overflowX;// = 0;
 	bool overflowY;// = 0;
@@ -76,6 +76,8 @@ private:
 
 	/* Painting */
 	void AdjustWindow();
+	void SetupWindowOffset();
+	void ClearWindowOffset();
 	void SetupAndDrawOffscreenBitmap();
 	void DrawGridElements(HDC hdc, RECT client);
 	void DrawHeaderDragGuideline(HDC hdc, RECT client);
