@@ -96,8 +96,8 @@ public:
 	static LRESULT CALLBACK DetailWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
 
 
-	CinchGrid(HWND hWnd, HINSTANCE hInst);
+	CinchGrid(HWND hWnd, HINSTANCE hInst, GridDelegate * delegate);
 
-	static HWND CreateCinchGrid(HWND parent);
+	static HWND CreateCinchGrid(HWND parent, GridDelegate * delegate);
 };
 

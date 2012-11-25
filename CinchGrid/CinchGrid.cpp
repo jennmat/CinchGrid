@@ -32,7 +32,7 @@ void RegisterCinchGrid()
 }
 
 
-HWND CinchGrid::CreateCinchGrid(HWND parent)
+HWND CinchGrid::CreateCinchGrid(HWND parent, GridDelegate* delegate)
 {
 	RegisterCinchGrid();
 
@@ -42,13 +42,13 @@ HWND CinchGrid::CreateCinchGrid(HWND parent)
 		WS_VISIBLE | WS_CHILD | WS_VSCROLL | WS_HSCROLL,
 		0, 0, 500, 500,
 		parent,
-		NULL, GetModuleHandle(0), NULL);
+		NULL, GetModuleHandle(0), delegate);
 
 	return hWnd;
 }
 
 
-CinchGrid::CinchGrid(HWND h, HINSTANCE inst){
+CinchGrid::CinchGrid(HWND h, HINSTANCE inst, GridDelegate * d){
 
 	numColumns = 0;
 
@@ -74,7 +74,7 @@ CinchGrid::CinchGrid(HWND h, HINSTANCE inst){
 
 	activelyDraggedColumn = -1;
 
-	delegate = new ReferenceDelegate();
+	delegate = d;
 
 	for(int i=0; i<delegate->totalColumns(); i++){
 		addColumn(delegate->headerContent(i), delegate->columnWidth(i));
@@ -428,7 +428,9 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 	{
 	case WM_NCCREATE:
 		{
-		CinchGrid * grid = new CinchGrid(hWnd, GetModuleHandle(0));
+		CREATESTRUCT* c = (CREATESTRUCT*)lParam;
+
+		CinchGrid * grid = new CinchGrid(hWnd, GetModuleHandle(0), (GridDelegate *)c->lpCreateParams);
 		SetWindowLong(hWnd, GWL_USERDATA, (LONG)grid);
 		return TRUE;
 		}
@@ -648,7 +650,8 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 
 			/*
 			HPEN red = CreatePen(PS_SOLID, 1, RGB(255,0,0));
-			HPEN green = CreatePen(PS_SOLID, 1, RGB(0,255,0));
+			HPEN green = Create
+			Pen(PS_SOLID, 1, RGB(0,255,0));
 			HPEN blue = CreatePen(PS_SOLID, 1, RGB(0,0,255));
 			SelectObject(hdc, red);
 			int xfac = 8;
