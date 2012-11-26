@@ -135,11 +135,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	RECT client;
 	GetWindowRect(hWnd, &client);
 	
-	gridWindow = CinchGrid::CreateCinchGrid(hWnd);
+	gridWindow = CinchGrid::CreateCinchGrid(hWnd, new ReferenceDelegate());
 	SetWindowPos(gridWindow, HWND_TOP, 0, 0, client.right, client.bottom, 0);
 	ShowWindow(gridWindow, nCmdShow);
-
-	
 
 	return TRUE;
 }

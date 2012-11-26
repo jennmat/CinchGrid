@@ -30,7 +30,7 @@ public:
 	virtual HFONT getEditFont() = 0;
 };
 
-#define MAX_ROWS 100
+#define MAX_ROWS 4000
 #define TOTAL_COLS 3
 
 class ReferenceDelegate : public GridDelegate {

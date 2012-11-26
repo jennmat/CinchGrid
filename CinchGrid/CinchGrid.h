@@ -31,6 +31,11 @@ private:
 	int scrollOffsetX;// = 0;
 	int scrollOffsetY;// = 0;
 
+	int offscreenWidth;
+	int offscreenHeight;
+
+	long windowOffsetY;
+
 	bool overflowX;// = 0;
 	bool overflowY;// = 0;
 
@@ -70,6 +75,9 @@ private:
 	void SetScroll(HWND hWnd);
 
 	/* Painting */
+	void AdjustWindow();
+	void SetupWindowOffset();
+	void ClearWindowOffset();
 	void SetupAndDrawOffscreenBitmap();
 	void DrawGridElements(HDC hdc, RECT client);
 	void DrawHeaderDragGuideline(HDC hdc, RECT client);
@@ -88,8 +96,8 @@ public:
 	static LRESULT CALLBACK DetailWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
 
 
-	CinchGrid(HWND hWnd, HINSTANCE hInst);
+	CinchGrid(HWND hWnd, HINSTANCE hInst, GridDelegate * delegate);
 
-	static HWND CreateCinchGrid(HWND parent);
+	static HWND CreateCinchGrid(HWND parent, GridDelegate * delegate);
 };
 
