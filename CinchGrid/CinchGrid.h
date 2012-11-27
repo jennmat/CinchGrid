@@ -3,7 +3,7 @@
 #include "resource.h"
 #include "stdafx.h"
 
-#define MAX_COLUMNS 1000
+#define MAX_GRID_COLUMNS 1000
 
 #define MAX_SCROLL_RANGE 10000
 
@@ -19,7 +19,7 @@ class CinchGrid {
 private:
 	
 	int numColumns;
-	GridColumn* columns[MAX_COLUMNS];
+	GridColumn* columns[MAX_GRID_COLUMNS];
 	GridDelegate* delegate;
 
 	HWND hWnd;

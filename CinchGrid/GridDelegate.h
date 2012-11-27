@@ -24,6 +24,7 @@ public:
 	virtual void editingFinished(HWND editor, int row, int col) = 0;
 
 	virtual bool allowNewRows() = 0;
+	virtual bool allowNewColumns() = 0;
 	virtual void prepareNewRow(int row) = 0;
 
 	virtual HFONT getFont()=0;
@@ -31,12 +32,13 @@ public:
 };
 
 #define MAX_ROWS 4000
-#define TOTAL_COLS 3
+#define MAX_COLUMNS 300
 
 class ReferenceDelegate : public GridDelegate {
 private:
 	int rowCount;
-	wchar_t* data[MAX_ROWS][TOTAL_COLS];
+	int columnCount;
+	wchar_t* data[MAX_ROWS][MAX_COLUMNS];
 public:
 	ReferenceDelegate();
 	int totalRows();
@@ -61,6 +63,7 @@ public:
 	void editingFinished(HWND editor, int row, int col);
 
 	bool allowNewRows();
+	bool allowNewColumns();
 	void prepareNewRow(int row);
 
 	HFONT getFont();

@@ -6,6 +6,8 @@
 
 #define MAX_LOADSTRING 100
 
+#define DEFAULT_COLUMN_WIDTH 120
+
 #define MAX_OFFSCREEN_WIDTH 400
 #define MAX_OFFSCREEN_HEIGHT 8000
 
@@ -14,12 +16,11 @@ TCHAR szClassName[] = _T("CinchGrid");
 void RegisterCinchGrid()
 {
     WNDCLASSEX wc;
- 
-    wc.cbSize         = sizeof(wc);
+	wc.cbSize         = sizeof(wc);
     wc.lpszClassName  = szClassName;
     wc.hInstance      = GetModuleHandle(0);
 	wc.lpfnWndProc    = CinchGrid::WndProc;
-    wc.hCursor        = LoadCursor (NULL, IDC_ARROW);
+    wc.hCursor        = LoadCursor(NULL, IDC_ARROW);
     wc.hIcon          = 0;
     wc.lpszMenuName   = 0;
 	wc.hbrBackground  = (HBRUSH)CreateSolidBrush(RGB(255,255,255));
@@ -97,7 +98,6 @@ CinchGrid::CinchGrid(HWND h, HINSTANCE inst, GridDelegate * d){
 		}
 	}
 
-	
 	int left = 0;
 	for(int i=0; i<numColumns; i++){
 		GridColumn* col = columns[i];
@@ -231,6 +231,41 @@ void CinchGrid::DrawHeaderDragGuideline(HDC hdc, RECT client )
 	}
 }
 
+void DrawColumnHeader(HDC hdc, int x, int width, int height, LPWSTR text)
+{
+	MoveToEx(hdc, x+width-1, 0, NULL);
+	LineTo(hdc, x+width-1, height);
+	TRIVERTEX vertex[2] ;
+	vertex[0].x     = x;
+	vertex[0].y     = 1;
+	vertex[0].Red   = 0xf000;
+	vertex[0].Green = 0xf000;
+	vertex[0].Blue  = 0xf000;
+	vertex[0].Alpha = 0x0000;
+
+	vertex[1].x     = x+width-1;
+	vertex[1].y     = height; 
+	vertex[1].Red   = 0xe000;
+	vertex[1].Green = 0xe000;
+	vertex[1].Blue  = 0xe000;
+	vertex[1].Alpha = 0x0000;
+
+	GRADIENT_RECT r;
+	r.UpperLeft = 0;
+	r.LowerRight = 1;
+
+	GradientFill(hdc, vertex, 2, &r, 1, GRADIENT_FILL_RECT_V);
+
+	RECT headerText;
+	headerText.left = x + 6;
+	headerText.top = 1;
+	headerText.bottom = height;
+	headerText.right = x + width;
+
+	DrawText(hdc, text, -1, &headerText, DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS);
+		
+}
+
 void CinchGrid::DrawHeader(HDC hdc, RECT client, bool fromPaintRoutine){
 	
 	if ( delegate->stickyHeaders() == true && !fromPaintRoutine ){
@@ -254,41 +289,17 @@ void CinchGrid::DrawHeader(HDC hdc, RECT client, bool fromPaintRoutine){
 	int left = 0;
 	for(int l=0; l<numColumns; l++){
 		GridColumn* col = columns[l];
-		int i = col->getWidth();
+		int width = col->getWidth();
 		//Rectangle(hdc, i, 0, i + COL_SPACING, delegate->rowHeight());
-		MoveToEx(hdc, left+i-1, 0, NULL);
-		LineTo(hdc, left+i-1, delegate->rowHeight());
-		TRIVERTEX vertex[2] ;
-		vertex[0].x     = left;
-		vertex[0].y     = 1;
-		vertex[0].Red   = 0xf000;
-		vertex[0].Green = 0xf000;
-		vertex[0].Blue  = 0xf000;
-		vertex[0].Alpha = 0x0000;
-
-		vertex[1].x     = left+i-1;
-		vertex[1].y     = delegate->rowHeight(); 
-		vertex[1].Red   = 0xe000;
-		vertex[1].Green = 0xe000;
-		vertex[1].Blue  = 0xe000;
-		vertex[1].Alpha = 0x0000;
-
-		GRADIENT_RECT r;
-		r.UpperLeft = 0;
-		r.LowerRight = 1;
-
-		GradientFill(hdc, vertex, 2, &r, 1, GRADIENT_FILL_RECT_V);
-
-		RECT headerText;
-		headerText.left = left + 6;
-		headerText.top = 1;
-		headerText.bottom = delegate->rowHeight();
-		headerText.right = left + i;
-
-		DrawText(hdc, col->getHeader(), -1, &headerText, DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS);
-			
-		left += i;
+		DrawColumnHeader(hdc, left, width, delegate->rowHeight(), col->getHeader());
+		left += width;
 		j++;
+	}
+	if( delegate->allowNewColumns() ){
+		while (left < offscreenWidth ){
+			DrawColumnHeader(hdc, left, DEFAULT_COLUMN_WIDTH, delegate->rowHeight(), L"");
+			left += DEFAULT_COLUMN_WIDTH;
+		}
 	}
 }
 
@@ -308,6 +319,14 @@ void CinchGrid::DrawVerticalGridlines(HDC hdc, RECT client)
 			LineTo(hdc, left + col->getWidth()-1, bottom );
 			left += col->getWidth();
 		}
+		if ( delegate->allowNewColumns() ){
+			while ( left < offscreenWidth ){
+				MoveToEx(hdc, left + DEFAULT_COLUMN_WIDTH-1, windowOffsetY, NULL);
+				LineTo(hdc, left + DEFAULT_COLUMN_WIDTH-1, bottom );
+			
+				left += DEFAULT_COLUMN_WIDTH;
+			}
+		}
 	} else {
 		MoveToEx(hdc, totalWidth, 0, NULL);
 		LineTo(hdc, totalWidth, totalHeight);
@@ -323,10 +342,14 @@ void CinchGrid::DrawHorizontalGridlines(HDC hdc, RECT client)
 		if (  delegate->allowNewRows() == false ){
 			bottom = client.bottom+1;
 		}
+		int width = totalWidth;
+		if( delegate->allowNewColumns() ){
+			width = offscreenWidth;
+		}
 		while (i * delegate->rowHeight() < bottom + windowOffsetY ){
 			if( i * delegate->rowHeight() >= 0 ){
 				MoveToEx(hdc, 0, i*delegate->rowHeight()+client.top, NULL);
-				LineTo(hdc, totalWidth, i*delegate->rowHeight() + client.top);
+				LineTo(hdc, width, i*delegate->rowHeight() + client.top);
 			}
 			i+= 1;
 		}
@@ -429,14 +452,13 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 	case WM_NCCREATE:
 		{
 		CREATESTRUCT* c = (CREATESTRUCT*)lParam;
-
 		CinchGrid * grid = new CinchGrid(hWnd, GetModuleHandle(0), (GridDelegate *)c->lpCreateParams);
 		SetWindowLong(hWnd, GWL_USERDATA, (LONG)grid);
 		return TRUE;
 		}
 		break;
 	case WM_MOUSEACTIVATE:
-		SetFocus(hWnd);
+		//SetFocus(hWnd);
 		return MA_ACTIVATE;
 	case WM_MOUSEMOVE:	
 		{
@@ -498,11 +520,7 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 				self->totalWidth += self->columns[i]->getWidth();
 			}
 
-			self->totalArea.right = self->totalWidth;
-			self->offscreenBitmap = CreateCompatibleBitmap(GetDC(hWnd), self->totalWidth, self->totalHeight+1);
-			SelectObject(self->offscreenDC, self->offscreenBitmap);
-
-			self->DrawGridElements(self->offscreenDC, self->totalArea);
+			self->SetupAndDrawOffscreenBitmap();
 
 			InvalidateRect(hWnd, NULL, true);
 		}
@@ -826,6 +844,7 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 	default:
 		break;
 	}
+
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
@@ -938,7 +957,7 @@ void CinchGrid::startEditing(int previous, int row){
 		}
 		left += columns[i]->getWidth();
 	}
-
+	
 	lastFocusedEditor = previousWindow;
 
 	if ( editingInitialized == false ){
