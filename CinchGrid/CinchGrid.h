@@ -69,7 +69,7 @@ private:
 	void addColumn(wchar_t * header, int width);
 
 	/*Editing */
-	void startEditing(int previous, int row);
+	void startEditing(int previous, int row, int col);
 	void scrollEditors(int offsetX, int offsetY);
 
 	void SetScroll(HWND hWnd);

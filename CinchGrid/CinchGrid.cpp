@@ -561,6 +561,7 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 				}
 			}
 			int clickedRow = (yPos + self->scrollOffsetY) / self->delegate->rowHeight() - 1;
+			
 
 			if ( self->delegate->allowNewRows() && clickedRow >= self->delegate->totalRows() ){
 				self->delegate->prepareNewRow(clickedRow);
@@ -601,7 +602,7 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 
 				}
 
-				self->startEditing(previousActiveRow-1, self->activeRow-1);
+				self->startEditing(previousActiveRow-1, self->activeRow-1, self->activeCol);
 
 				if( previousActiveRow != -1 ){
 					self->SetupWindowOffset();
@@ -898,7 +899,7 @@ LRESULT CALLBACK CinchGrid::DetailWndProc(HWND hWnd, UINT message, WPARAM wParam
 				}
 			}
 
-			self->startEditing(previousActiveRow-1, self->activeRow-1);
+			self->startEditing(previousActiveRow-1, self->activeRow-1, -1);
 	
 			if( previousActiveRow != -1 ){
 				RECT client;
@@ -920,7 +921,7 @@ LRESULT CALLBACK CinchGrid::DetailWndProc(HWND hWnd, UINT message, WPARAM wParam
 
 
 
-void CinchGrid::startEditing(int previous, int row){
+void CinchGrid::startEditing(int previous, int row, int col){
 	int left = 0;
 	HWND previousWindow = HWND_TOP;
 	if( editingInitialized == false ){
@@ -971,7 +972,12 @@ void CinchGrid::startEditing(int previous, int row){
 		ShowWindow(tabCapture, SW_SHOW);
 	}
 
+	if ( col >= 0 ){
+		SetFocus(columns[col]->getEditor());
+	}
+	
 	SendMessage(GetFocus(), EM_SETSEL, 0, -1);
+	
 		
 	editingInitialized = true;
 }
