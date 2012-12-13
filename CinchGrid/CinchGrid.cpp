@@ -461,6 +461,9 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 	case WM_MOUSEACTIVATE:
 		//SetFocus(hWnd);
 		return MA_ACTIVATE;
+	case WM_KEYUP:
+		OutputDebugStringW(TEXT("KEYUP"));
+		break;
 	case WM_MOUSEMOVE:	
 		{
 		int mouseXPos = GET_X_LPARAM(lParam); 
@@ -869,7 +872,26 @@ LRESULT CALLBACK CinchGrid::DetailWndProc(HWND hWnd, UINT message, WPARAM wParam
 			InflateRect((LPRECT)lParam, 0, -cyBorder);
 		}
 		break;
-	
+	case WM_KEYUP:
+		if ( wParam == VK_RETURN ){
+			int previous = self->activeRow;
+			self->delegate->editingFinished(hWnd, previous-1, uIdSubclass);
+			
+			self->activeRow++;
+			self->startEditing(previous-1, self->activeRow-1, 0);
+
+			if( previous != -1 ){
+				self->SetupWindowOffset();
+				RECT client;
+				GetClientRect(hWnd, &client);
+				self->DrawTextForRow(self->offscreenDC, client, previous-1); 
+				self->ClearWindowOffset();
+				InvalidateRect(hWnd, NULL, true);
+			}
+
+		}
+		break;
+
 	case WM_KILLFOCUS:
 		self->delegate->editingFinished(hWnd, self->activeRow-1, uIdSubclass);
 		break;
