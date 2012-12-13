@@ -4,8 +4,8 @@
 
 ReferenceDelegate::ReferenceDelegate(){
 	int i,j;
-	rowCount = 10;
-	columnCount = 3;
+	rowCount = 0;
+	columnCount = 0;
 
 	for(i=0;i<MAX_ROWS;i++){
 		for(j=0; j<MAX_COLUMNS; j++){
