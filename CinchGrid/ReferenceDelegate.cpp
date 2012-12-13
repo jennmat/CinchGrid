@@ -4,17 +4,18 @@
 
 ReferenceDelegate::ReferenceDelegate(){
 	int i,j;
-	rowCount = 13;
+	rowCount = 0;
+	columnCount = 0;
 
 	for(i=0;i<MAX_ROWS;i++){
-		for(j=0; j<TOTAL_COLS; j++){
+		for(j=0; j<MAX_COLUMNS; j++){
 			data[i][j]=NULL;
 		}
 	}
 }
 
 int ReferenceDelegate::totalColumns(){
-	return TOTAL_COLS;
+	return columnCount;
 }
 
 int ReferenceDelegate::totalRows(){
@@ -153,6 +154,10 @@ void ReferenceDelegate::editingFinished(HWND editor, int row, int col)
 }
 
 bool ReferenceDelegate::allowNewRows() {
+	return true;
+}
+
+bool ReferenceDelegate::allowNewColumns() {
 	return true;
 }
 
