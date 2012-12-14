@@ -179,11 +179,11 @@ void CinchGrid::AdjustWindow(){
 	GetWindowRect(hWnd, &client);
 
 	if ( scrollOffsetY + client.bottom > windowOffsetY + offscreenHeight ){
-		windowOffsetY =  scrollOffsetY - ((offscreenHeight - client.bottom) / 2);
+		windowOffsetY =  max(0, scrollOffsetY - ((offscreenHeight - client.bottom) / 2));
 		
 		SetupAndDrawOffscreenBitmap();
 	} else if ( scrollOffsetY < windowOffsetY ){
-		windowOffsetY =  scrollOffsetY - ((offscreenHeight - client.bottom) / 2);
+		windowOffsetY =  max(0,scrollOffsetY - ((offscreenHeight - client.bottom) / 2));
 		
 		SetupAndDrawOffscreenBitmap();
 	}
@@ -433,6 +433,9 @@ void CinchGrid::DrawCellText(HDC hdc, RECT client)
 		
 	int j = 0;
 	int left = 0;
+	if ( windowOffsetY < 0 ){
+		int a = 1;
+	}
 	for(int row = windowOffsetY / delegate->rowHeight(); row<delegate->totalRows() && row*delegate->rowHeight() < client.bottom + windowOffsetY; row++){
 		left = 0;
 		DrawTextForRow(hdc, client, row);
@@ -710,10 +713,10 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		int cmd = LOWORD(wParam); 
 		RECT client;
 		GetClientRect(hWnd, &client);
-		
+		int lastY = self->scrollOffsetY;
+			
 		if ( cmd == SB_THUMBPOSITION || cmd == SB_THUMBTRACK ){
 			SetScrollPos(hWnd, SB_VERT, ypos, true);
-			int lastY = self->scrollOffsetY;
 			self->scrollOffsetY = ypos;
 			self->scrollEditors(0, self->scrollOffsetY - lastY);
 			self->AdjustWindow();
@@ -722,6 +725,7 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 			self->scrollOffsetY += client.bottom;
 			if( self->scrollOffsetY > self->totalHeight - client.bottom ){
 				self->scrollOffsetY = self->totalHeight - client.bottom;
+				self->scrollEditors(0, self->scrollOffsetY - lastY);
 			} else {
 				self->scrollEditors(0, client.bottom);				
 			}
@@ -732,6 +736,8 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 			self->scrollOffsetY -= client.bottom;
 			if( self->scrollOffsetY < 0 ) {
 				self->scrollOffsetY = 0;
+				self->scrollEditors(0, self->scrollOffsetY - lastY);
+
 			} else {
 				self->scrollEditors(0, 0 - client.bottom);
 			}
@@ -742,9 +748,11 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 			self->scrollOffsetY += self->delegate->rowHeight();
 			if( self->scrollOffsetY > self->totalHeight - client.bottom ){
 				self->scrollOffsetY = self->totalHeight - client.bottom;
-			}	
+			} else {
+				self->scrollEditors(0, self->delegate->rowHeight());
+			}
 			SetScrollPos(hWnd, SB_VERT, self->scrollOffsetY, true);
-			self->scrollEditors(0, self->delegate->rowHeight());
+			
 			self->AdjustWindow();
 			InvalidateRect(hWnd, NULL, true);
 		} else if ( cmd == SB_LINEUP ){
