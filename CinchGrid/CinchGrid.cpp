@@ -567,7 +567,10 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 			
 
 			if ( self->delegate->allowNewRows() && clickedRow >= self->delegate->totalRows() ){
-				self->delegate->prepareNewRow(clickedRow);
+				int newRows = clickedRow + 1 - self->delegate->totalRows();
+				for(int i=0; i<newRows; i++){
+					self->delegate->prepareNewRow(clickedRow);
+				}
 				self->totalHeight = (self->delegate->totalRows() + 1) * self->delegate->rowHeight();
 			}
 
@@ -878,6 +881,15 @@ LRESULT CALLBACK CinchGrid::DetailWndProc(HWND hWnd, UINT message, WPARAM wParam
 			self->delegate->editingFinished(hWnd, previous-1, uIdSubclass);
 			
 			self->activeRow++;
+			if ( self->activeRow > self->delegate->totalRows() ){
+				if ( self->delegate->allowNewRows() ) {
+					self->delegate->prepareNewRow(self->activeRow-1);
+					self->totalHeight = (self->delegate->totalRows() + 1) * self->delegate->rowHeight();
+				} else {
+					self->activeRow = 1;
+				}
+			}
+
 			self->startEditing(previous-1, self->activeRow-1, 0);
 
 			if( previous != -1 ){
