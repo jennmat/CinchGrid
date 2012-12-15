@@ -420,6 +420,11 @@ void CinchGrid::DrawActiveRow(HDC hdc, RECT client)
 		row.bottom = row.top + delegate->rowHeight()+1;
 		FillRect(hdc, &row, activeRowBrush);
 		Rectangle(hdc, row.left, row.top, row.right, row.bottom);
+
+		HFONT hFont = delegate->getFont();
+		SelectObject(hdc, hFont);
+		SetBkMode(hdc, TRANSPARENT);
+	
 		DrawTextForRow(hdc, client, activeRow-1);
 	}
 }
@@ -1048,7 +1053,7 @@ void CinchGrid::DrawGridElements(HDC hdc, RECT client)
 	DrawHorizontalGridlines(hdc, client);
 	DrawCellText(hdc, client);
 
-	//DrawActiveRow(hdc, client);
+	DrawActiveRow(hdc, client);
 	DrawHeaderDragGuideline(hdc, client);
 
 	DrawHeader(hdc, client, false);
