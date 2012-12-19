@@ -14,6 +14,7 @@
 #define TAB_CAPTURE_CLASS -100
 #define REVERSE_TAB_CAPTURE_CLASS -200
 
+#define HEADER_EDITOR 998
 
 class CinchGrid {
 private:
@@ -24,6 +25,8 @@ private:
 
 	HWND hWnd;
 	HINSTANCE hInst;
+
+	HWND headerEditor;
 
 	int activeRow;// = -1;
 	int activeCol;// = -1;
@@ -45,6 +48,8 @@ private:
 	bool draggingHeader;// = false;
 	bool editingInitialized;// = false;
 	int draggedXPos;// = 0;
+
+	int editingHeader;
 
 	int activelyDraggedColumn;// = -1;
 
@@ -70,6 +75,8 @@ private:
 
 	/*Editing */
 	void startEditing(int previous, int row, int col);
+	void stopHeaderTitleEditing();
+	void startHeaderTitleEditing(int col);
 	void scrollEditors(int offsetX, int offsetY);
 
 	void SetScroll(HWND hWnd);

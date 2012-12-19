@@ -20,6 +20,7 @@ public:
 
 	virtual void setupEditorForCell(HWND editor, int row, int col) = 0;
 	virtual bool allowEditing(int col) = 0;
+	virtual bool allowHeaderTitleEditing(int col)=0;
 	virtual HWND editorForColumn(int, HWND parent, HINSTANCE hInst) = 0;
 	virtual void editingFinished(HWND editor, int row, int col) = 0;
 
@@ -58,6 +59,7 @@ public:
 	bool drawVerticalGridlines();
 
 	bool allowEditing(int);
+	bool allowHeaderTitleEditing(int);
 	void setupEditorForCell(HWND editor, int row, int col);
 	HWND editorForColumn(int, HWND parent, HINSTANCE hInst) ;
 	void editingFinished(HWND editor, int row, int col);

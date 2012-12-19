@@ -5,7 +5,7 @@
 ReferenceDelegate::ReferenceDelegate(){
 	int i,j;
 	rowCount = 140;
-	columnCount = 1;
+	columnCount = 3;
 
 	for(i=0;i<MAX_ROWS;i++){
 		for(j=0; j<MAX_COLUMNS; j++){
@@ -45,22 +45,22 @@ bool ReferenceDelegate::stickyHeaders(){
 
 wchar_t* ReferenceDelegate::cellContent(int row, int col) {
 	
-	//if( data[row][col] != NULL ){
-	//	return data[row][col];
-	//}
+	if( data[row][col] != NULL ){
+		return data[row][col];
+	}
 	
-	if ( col == 0 ){
+	/*if ( col == 0 ){
 		wchar_t* buffer = (wchar_t*)malloc(20*sizeof(wchar_t));
 		_itow_s((row+1)*(col+1), buffer, 20, 10);
 
 		return buffer;
-	}
+	}*/
 
 	//if( col == 1 ){
 	//		return TEXT("");
 	//	}
 	//return TEXT("Random Text");
-	//return TEXT("");
+	return TEXT("");
 }
 
 HFONT ReferenceDelegate::getFont(){
@@ -86,12 +86,16 @@ int ReferenceDelegate::rowHeight(){
 }
 
 bool ReferenceDelegate::rowSelection() {
-	return true;
+	return false;
 }
 
 bool ReferenceDelegate::allowEditing(int col){
-	if( col == 0 ) return false;
-	return false;
+	if( col == 0 ) return true;
+	return true;
+}
+
+bool ReferenceDelegate::allowHeaderTitleEditing(int col){
+	return true;
 }
 
 HWND CreateComboBox(HWND parent, HINSTANCE hInst){
@@ -159,7 +163,7 @@ bool ReferenceDelegate::allowNewRows() {
 }
 
 bool ReferenceDelegate::allowNewColumns() {
-	return true;
+	return false;
 }
 
 void ReferenceDelegate::prepareNewRow(int row){

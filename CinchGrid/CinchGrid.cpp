@@ -53,10 +53,14 @@ CinchGrid::CinchGrid(HWND h, HINSTANCE inst, GridDelegate * d){
 
 	numColumns = 0;
 
+	headerEditor = NULL;
+
 	hWnd = h;
 	hInst = inst;
 	activeRow = -1;
 	activeCol = -1;
+
+	editingHeader = -1;
 
 	scrollOffsetX = 0;
 	scrollOffsetY = 0;
@@ -553,11 +557,22 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 
 		if ( yPos < self->delegate->rowHeight() ){
 			int accum = 0;
+			int activeCol = 0;
 			for(int i=0; i<self->numColumns; i++){
 				accum += self->columns[i]->getWidth();
 				if ( abs(accum-xPos) < 10 ){
 					self->draggingHeader = true;
 					self->activelyDraggedColumn = i;
+				}
+				if ( accum > xPos ){
+					activeCol = i;
+					break;
+				}
+			}
+			if ( !self->draggingHeader ) {
+				if ( self->delegate->allowHeaderTitleEditing(activeCol) ){
+					self->startHeaderTitleEditing(activeCol);
+					InvalidateRect(hWnd, NULL, true);
 				}
 			}
 		} else {
@@ -613,7 +628,6 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 					//InvalidateRect(hWnd, &repaint, true);
 					//InvalidateRect(hWnd, &r2, true);
 					InvalidateRect(hWnd, NULL, true);
-
 				}
 
 				self->startEditing(previousActiveRow-1, self->activeRow-1, self->activeCol);
@@ -624,7 +638,6 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 					self->ClearWindowOffset();
 					InvalidateRect(hWnd, NULL, true);
 				}
-
 			}
 		}
 		}
@@ -889,6 +902,15 @@ LRESULT CALLBACK CinchGrid::DetailWndProc(HWND hWnd, UINT message, WPARAM wParam
 		}
 		break;
 	case WM_KEYUP:
+		if ( uIdSubclass == HEADER_EDITOR ){
+			if ( self->editingHeader >= 0 ) {
+				wchar_t * newText = (wchar_t*)malloc(50*sizeof(wchar_t));
+				memset(newText, 0, 50);
+				GetWindowText(self->headerEditor, newText, 50);
+				self->columns[self->editingHeader]->setHeader(newText);
+
+			}
+		}
 		if ( wParam == VK_RETURN ){
 			int previous = self->activeRow;
 			self->delegate->editingFinished(hWnd, previous-1, uIdSubclass);
@@ -918,7 +940,11 @@ LRESULT CALLBACK CinchGrid::DetailWndProc(HWND hWnd, UINT message, WPARAM wParam
 		break;
 
 	case WM_KILLFOCUS:
-		self->delegate->editingFinished(hWnd, self->activeRow-1, uIdSubclass);
+		if ( uIdSubclass == HEADER_EDITOR ){
+			self->stopHeaderTitleEditing();
+		} else {
+			self->delegate->editingFinished(hWnd, self->activeRow-1, uIdSubclass);
+		}
 		break;
 	case WM_SETFOCUS:
 		if ( uIdSubclass == TAB_CAPTURE_CLASS || uIdSubclass == REVERSE_TAB_CAPTURE_CLASS ){
@@ -966,6 +992,39 @@ LRESULT CALLBACK CinchGrid::DetailWndProc(HWND hWnd, UINT message, WPARAM wParam
 	
 }
 
+void CinchGrid::stopHeaderTitleEditing(){
+	ShowWindow(headerEditor, SW_HIDE);
+	SetupWindowOffset();
+	RECT client;
+	GetClientRect(hWnd, &client);
+	DrawHeader(offscreenDC, client, false);
+	InvalidateRect(hWnd, NULL, true);
+}
+
+void CinchGrid::startHeaderTitleEditing(int col){
+	if ( headerEditor == NULL ){
+		headerEditor = CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP,
+			0, 0, 0, 0, hWnd, NULL, hInst, NULL);
+		
+		SetWindowSubclass(headerEditor, DetailWndProc, HEADER_EDITOR, (DWORD_PTR)this);
+		
+		SendMessage(headerEditor, WM_SETFONT, (WPARAM)delegate->getEditFont(), 0);
+	}
+
+	SendMessage(headerEditor, WM_SETTEXT, (WPARAM)0, (LPARAM)columns[col]->getHeader());
+
+	int x = 0;
+	int i = 0;
+	while( i < col ){
+		x+= columns[i]->getWidth();
+		i++;
+	}
+
+	editingHeader = col;
+	SetWindowPos(headerEditor, HWND_TOP, x, 0, columns[col]->getWidth(), delegate->rowHeight(), 0);
+	ShowWindow(headerEditor, SW_SHOW);
+
+}
 
 
 void CinchGrid::startEditing(int previous, int row, int col){

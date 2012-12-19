@@ -10,6 +10,7 @@ public:
 	int getWidth();
 	void setWidth(int);
 	wchar_t* getHeader();
+	void setHeader(wchar_t*);
 	HWND getEditor();
 	void setEditor(HWND);
 };

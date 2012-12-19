@@ -14,6 +14,10 @@ wchar_t * GridColumn::getHeader(){
 	return this->header;
 }
 
+void GridColumn::setHeader(wchar_t* text){
+	this->header = text;
+}
+
 int GridColumn::getWidth(){
 	return width;
 }
