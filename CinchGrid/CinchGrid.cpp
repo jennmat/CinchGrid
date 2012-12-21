@@ -285,9 +285,13 @@ void CinchGrid::DrawHeader(HDC hdc, RECT client, bool fromPaintRoutine){
 	SelectObject(hdc, headerPen);	
 
 	MoveToEx(hdc, 0, 0, NULL);
-	LineTo(hdc, totalWidth, 0);
+	int right = totalArea.right;
+	if ( !delegate->allowNewColumns() ){
+		right = totalWidth;
+	}
+	LineTo(hdc, right, 0);
 	MoveToEx(hdc, 0, delegate->rowHeight(), NULL);
-	LineTo(hdc, totalWidth, delegate->rowHeight());
+	LineTo(hdc, right, delegate->rowHeight());
 
 	int j = 0;
 	int left = 0;

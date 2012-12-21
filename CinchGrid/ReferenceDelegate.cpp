@@ -163,7 +163,7 @@ bool ReferenceDelegate::allowNewRows() {
 }
 
 bool ReferenceDelegate::allowNewColumns() {
-	return false;
+	return true;
 }
 
 void ReferenceDelegate::prepareNewRow(int row){
