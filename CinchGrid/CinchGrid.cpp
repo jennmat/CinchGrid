@@ -242,16 +242,16 @@ void DrawColumnHeader(HDC hdc, int x, int width, int height, LPWSTR text)
 	TRIVERTEX vertex[2] ;
 	vertex[0].x     = x;
 	vertex[0].y     = 1;
-	vertex[0].Red   = 0xf000;
-	vertex[0].Green = 0xf000;
-	vertex[0].Blue  = 0xf000;
+	vertex[0].Red   = 0xf200;
+	vertex[0].Green = 0xf200;
+	vertex[0].Blue  = 0xf200;
 	vertex[0].Alpha = 0x0000;
 
 	vertex[1].x     = x+width-1;
 	vertex[1].y     = height; 
-	vertex[1].Red   = 0xe000;
-	vertex[1].Green = 0xe000;
-	vertex[1].Blue  = 0xe000;
+	vertex[1].Red   = 0xe200;
+	vertex[1].Green = 0xe200;
+	vertex[1].Blue  = 0xe200;
 	vertex[1].Alpha = 0x0000;
 
 	GRADIENT_RECT r;
