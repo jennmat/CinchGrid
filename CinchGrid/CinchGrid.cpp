@@ -114,7 +114,6 @@ CinchGrid::CinchGrid(HWND h, HINSTANCE inst, GridDelegate * d){
 
 	headerPen = CreatePen(PS_SOLID, 1, RGB(137, 140, 149));
 	gridlinesPen = CreatePen(PS_SOLID, 1, RGB(210, 210, 210));
-	guidelinePen = CreatePen(PS_DOT, 1, RGB(210,210,210));
 	solidWhiteBrush = CreateSolidBrush(RGB(255,255,255));
 	activeRowBrush = CreateSolidBrush(RGB(222,235,250));
 		
@@ -162,16 +161,16 @@ void CinchGrid::SetScroll(HWND hWnd)
 	hsi.nPage  = client.right;
 	SetScrollInfo(hWnd, SB_HORZ, &hsi, TRUE);
 
-	//if ( overflowX){
+	if ( overflowX){
 		ShowScrollBar(hWnd, SB_HORZ, true);
-	//} else {
-//		ShowScrollBar(hWnd, SB_HORZ, false);
-	//}
-	//if ( overflowY ){
+	} else {
+		ShowScrollBar(hWnd, SB_HORZ, false);
+	}
+	if ( overflowY ){
 		ShowScrollBar(hWnd, SB_VERT, true);
-//	} else {
-	//	ShowScrollBar(hWnd, SB_VERT, false);
-	//}
+	} else {
+		ShowScrollBar(hWnd, SB_VERT, false);
+	}
 			
 }
 
@@ -229,7 +228,7 @@ void CinchGrid::SetupAndDrawOffscreenBitmap(){
 void CinchGrid::DrawHeaderDragGuideline(HDC hdc, RECT client )
 {
 	if ( draggingHeader == true ){
-		SelectObject(hdc, guidelinePen);	
+		SelectObject(hdc, headerPen);	
 	
 		MoveToEx(hdc, draggedXPos, 0, NULL);
 		LineTo(hdc, draggedXPos, client.bottom);
@@ -467,8 +466,6 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 	
 	switch (message)
 	{
-	case WM_ACTIVATE:
-		break;
 	case WM_NCCREATE:
 		{
 		CREATESTRUCT* c = (CREATESTRUCT*)lParam;
@@ -485,7 +482,6 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		break;
 	case WM_MOUSEMOVE:	
 		{
-
 		int mouseXPos = GET_X_LPARAM(lParam); 
 		int mouseYPos = GET_Y_LPARAM(lParam); 
 		
@@ -544,12 +540,12 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 				self->totalWidth += self->columns[i]->getWidth();
 			}
 
-			self->draggingHeader = false;
 			self->SetupAndDrawOffscreenBitmap();
 
 			InvalidateRect(hWnd, NULL, true);
 		}
-		
+		self->draggingHeader = false;
+
 		break;
 	case WM_LBUTTONDOWN:
 		{
@@ -638,20 +634,14 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 					InvalidateRect(hWnd, NULL, true);
 				}
 
-				//self->delegate->editingFinished(hWnd, self->activeRow-1, uIdSubclass);
-
 				self->startEditing(previousActiveRow-1, self->activeRow-1, self->activeCol);
-				
-				if ( previousActiveRow > -1 ){
+
+				if( previousActiveRow != -1 ){
 					self->SetupWindowOffset();
-					GetClientRect(hWnd, &client);
 					self->DrawTextForRow(self->offscreenDC, client, previousActiveRow-1); 
 					self->ClearWindowOffset();
 					InvalidateRect(hWnd, NULL, true);
 				}
-				//self->stopEditing(previousActiveRow-1);
-
-				
 			}
 		}
 		}
@@ -684,7 +674,6 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		return 1;
 	case WM_PAINT:
 		{
-		
 		hdc = BeginPaint(hWnd, &ps);
 		
 		//POINT origin;
@@ -734,11 +723,6 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 
 		EndPaint(hWnd, &ps);
 
-		if( self != NULL ){
-			self->SetScroll(hWnd);
-		}
-	
-		
 		//SetWindowOrgEx(hdc, origin.x, origin.y, 0);
 		}
 		break;
@@ -964,7 +948,6 @@ LRESULT CALLBACK CinchGrid::DetailWndProc(HWND hWnd, UINT message, WPARAM wParam
 			self->stopHeaderTitleEditing();
 		} else {
 			self->delegate->editingFinished(hWnd, self->activeRow-1, uIdSubclass);
-			self->stopEditing(self->activeRow - 1);
 		}
 		break;
 	case WM_SETFOCUS:
@@ -1049,29 +1032,7 @@ void CinchGrid::startHeaderTitleEditing(int col){
 }
 
 
-void CinchGrid::stopEditing(int row){
-	OutputDebugStringW(TEXT("Stopping editing\n"));
-	if( row > -1 ){
-
-		for(int i=0; i<numColumns; i++){
-			if ( columns[i]->getEditor() != NULL ){
-				ShowWindow(columns[i]->getEditor(), SW_HIDE);
-			}
-		}
-
-
-		SetupWindowOffset();
-		RECT client;
-		GetClientRect(hWnd, &client);
-		DrawTextForRow(offscreenDC, client, row); 
-		ClearWindowOffset();
-		InvalidateRect(hWnd, NULL, true);
-	}
-}
-
 void CinchGrid::startEditing(int previous, int row, int col){
-	OutputDebugStringW(TEXT("Starting editing\n"));
-
 	int left = 0;
 	HWND previousWindow = HWND_TOP;
 	if( editingInitialized == false ){
