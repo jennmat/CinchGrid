@@ -55,6 +55,7 @@ private:
 
 	HPEN headerPen;
 	HPEN gridlinesPen;
+	HPEN guidelinePen;
 
 	HBRUSH solidWhiteBrush;
 	HBRUSH activeRowBrush;
@@ -75,6 +76,7 @@ private:
 
 	/*Editing */
 	void startEditing(int previous, int row, int col);
+	void stopEditing(int row);
 	void stopHeaderTitleEditing();
 	void startHeaderTitleEditing(int col);
 	void scrollEditors(int offsetX, int offsetY);
