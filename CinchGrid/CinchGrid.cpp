@@ -1024,6 +1024,7 @@ void CinchGrid::startHeaderTitleEditing(int col){
 	SetWindowPos(headerEditor, HWND_TOP, x, 0, columns[col]->getWidth(), delegate->rowHeight(), 0);
 	ShowWindow(headerEditor, SW_SHOW);
 
+	SetFocus(headerEditor);
 }
 
 
