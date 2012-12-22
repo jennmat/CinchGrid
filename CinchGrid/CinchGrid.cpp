@@ -228,7 +228,7 @@ void CinchGrid::SetupAndDrawOffscreenBitmap(){
 void CinchGrid::DrawHeaderDragGuideline(HDC hdc, RECT client )
 {
 	if ( draggingHeader == true ){
-		SelectObject(hdc, headerPen);	
+		SelectObject(hdc, gridlinesPen);	
 	
 		MoveToEx(hdc, draggedXPos, 0, NULL);
 		LineTo(hdc, draggedXPos, client.bottom);
@@ -535,16 +535,18 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 
 			self->columns[self->activelyDraggedColumn]->setWidth(mouseXPos - accum);	
 			
+			self->adjustEditors();
+
 			self->totalWidth = 0;
 			for(int i=0; i<self->numColumns; i++){
 				self->totalWidth += self->columns[i]->getWidth();
 			}
-
+			self->draggingHeader = false;
+	
 			self->SetupAndDrawOffscreenBitmap();
 
 			InvalidateRect(hWnd, NULL, true);
 		}
-		self->draggingHeader = false;
 
 		break;
 	case WM_LBUTTONDOWN:
@@ -1031,6 +1033,18 @@ void CinchGrid::startHeaderTitleEditing(int col){
 	SetFocus(headerEditor);
 }
 
+void CinchGrid::adjustEditors(){
+	int left = 0;
+	HWND previousWindow = HWND_TOP;
+	for(int i=0; i<numColumns; i++){
+		HWND editor = columns[i]->getEditor();
+		int width = columns[i]->getWidth();
+		SetWindowPos(editor, previousWindow, left-scrollOffsetX, (activeRow) * delegate->rowHeight() - scrollOffsetY, columns[i]->getWidth(), delegate->rowHeight(), 0);
+		ShowWindow(editor, SW_SHOW);
+		previousWindow = editor;
+		left += columns[i]->getWidth();
+	}
+}
 
 void CinchGrid::startEditing(int previous, int row, int col){
 	int left = 0;

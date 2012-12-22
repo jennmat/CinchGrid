@@ -78,7 +78,7 @@ private:
 	void stopHeaderTitleEditing();
 	void startHeaderTitleEditing(int col);
 	void scrollEditors(int offsetX, int offsetY);
-
+	void adjustEditors();
 	void SetScroll(HWND hWnd);
 
 	/* Painting */
