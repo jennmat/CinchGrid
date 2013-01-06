@@ -43,7 +43,7 @@ bool ReferenceDelegate::stickyHeaders(){
 	return true;
 }
 
-wchar_t* ReferenceDelegate::cellContent(int row, int col) {
+const wchar_t* ReferenceDelegate::cellContent(int row, int col) {
 	
 	if( data[row][col] != NULL ){
 		return data[row][col];

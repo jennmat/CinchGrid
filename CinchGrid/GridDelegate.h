@@ -9,7 +9,7 @@ public:
 	virtual int columnWidth(int column)=0;
 	virtual int rowHeight() = 0;
 	virtual wchar_t* headerContent(int)=0;
-	virtual wchar_t* cellContent(int, int)=0;
+	virtual const wchar_t* cellContent(int, int)=0;
 
 	virtual bool stickyHeaders() = 0;
 
@@ -49,7 +49,7 @@ public:
 	int rowHeight();
 
 	wchar_t* headerContent(int);
-	wchar_t* cellContent(int, int);
+	const wchar_t* cellContent(int, int);
 
 	bool stickyHeaders();
 	
