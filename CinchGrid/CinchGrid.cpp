@@ -627,9 +627,9 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 					//InvalidateRect(hWnd, &repaint, true);
 					self->SetupWindowOffset();
 					if (previousActiveRow > 0 ){
-						//self->ClearActiveRow(previousActiveRow, self->offscreenDC, client);
+						self->ClearActiveRow(previousActiveRow, self->offscreenDC, client);
 					}
-					//self->DrawActiveRow(self->offscreenDC, client);
+					self->DrawActiveRow(self->offscreenDC, client);
 					self->ClearWindowOffset();
 					//InvalidateRect(hWnd, &repaint, true);
 					//InvalidateRect(hWnd, &r2, true);
@@ -697,9 +697,9 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 				self->DrawHeader(hdc, ps.rcPaint, true);
 			}
 
-			if ( self->activeRow >= 0 ){
-				self->DrawActiveRow(hdc, ps.rcPaint);
-			}
+			//if ( self->activeRow >= 0 ){
+			//	self->DrawActiveRow(hdc, ps.rcPaint);
+			//}
 
 			/*
 			HPEN red = CreatePen(PS_SOLID, 1, RGB(255,0,0));
