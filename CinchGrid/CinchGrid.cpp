@@ -120,6 +120,11 @@ CinchGrid::CinchGrid(HWND h, HINSTANCE inst, GridDelegate * d){
 	offscreenDC = CreateCompatibleDC(GetDC(hWnd));
 }
 
+void CinchGrid::reloadData(){
+	activeRow = -1;
+	SetupAndDrawOffscreenBitmap();
+	InvalidateRect(hWnd, NULL, true);
+}
 
 void CinchGrid::addColumn(wchar_t * header, int width) {
 	columns[numColumns] = new GridColumn(header, width);
