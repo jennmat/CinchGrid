@@ -16,6 +16,8 @@
 
 #define HEADER_EDITOR 998
 
+#define CINCHGRID_ROW_SELECTED (WM_APP + 0x0102)
+
 class CinchGrid {
 private:
 	

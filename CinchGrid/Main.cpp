@@ -158,6 +158,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	switch (message)
 	{
+	case CINCHGRID_ROW_SELECTED:
+		OutputDebugStringW(TEXT("Row selected"));
+		break;
+
 	case WM_COMMAND:
 		wmId    = LOWORD(wParam);
 		wmEvent = HIWORD(wParam);

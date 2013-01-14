@@ -634,6 +634,8 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 					//InvalidateRect(hWnd, &repaint, true);
 					//InvalidateRect(hWnd, &r2, true);
 					InvalidateRect(hWnd, NULL, true);
+				
+					PostMessage(GetParent(hWnd), CINCHGRID_ROW_SELECTED, 0, 0);
 				}
 
 				self->startEditing(previousActiveRow-1, self->activeRow-1, self->activeCol);
