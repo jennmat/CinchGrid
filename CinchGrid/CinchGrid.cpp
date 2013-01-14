@@ -120,6 +120,11 @@ CinchGrid::CinchGrid(HWND h, HINSTANCE inst, GridDelegate * d){
 	offscreenDC = CreateCompatibleDC(GetDC(hWnd));
 }
 
+void CinchGrid::reloadData(){
+	activeRow = -1;
+	SetupAndDrawOffscreenBitmap();
+	InvalidateRect(hWnd, NULL, true);
+}
 
 void CinchGrid::addColumn(wchar_t * header, int width) {
 	columns[numColumns] = new GridColumn(header, width);
@@ -320,7 +325,7 @@ void CinchGrid::DrawVerticalGridlines(HDC hdc, RECT client)
 		int left = 0;
 		int bottom = client.bottom;
 		if ( !delegate->allowNewRows() ){
-			bottom = totalHeight;
+			bottom = totalArea.bottom;
 		}
 		for(int i=0; i<numColumns; i++){
 			GridColumn* col = columns[i];
