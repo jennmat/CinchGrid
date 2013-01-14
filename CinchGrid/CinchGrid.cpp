@@ -1146,3 +1146,6 @@ void CinchGrid::DrawGridElements(HDC hdc, RECT client)
 
 
 
+int CinchGrid::GetActiveRow(){
+	return activeRow - 1;
+}

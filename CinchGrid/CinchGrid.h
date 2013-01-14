@@ -99,6 +99,7 @@ private:
 	void ClearActiveRow(int row, HDC hdc, RECT client);
 	
 
+	int GetActiveRow();
 
 public:
 	static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
