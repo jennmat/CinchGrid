@@ -99,13 +99,13 @@ private:
 	void ClearActiveRow(int row, HDC hdc, RECT client);
 	
 
-	int GetActiveRow();
-
+	
 public:
 	static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 	static LRESULT CALLBACK DetailWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
 
 	void reloadData();
+	int GetActiveRow();
 
 	CinchGrid(HWND hWnd, HINSTANCE hInst, GridDelegate * delegate);
 
