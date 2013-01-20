@@ -81,6 +81,17 @@ CinchGrid::CinchGrid(HWND h, HINSTANCE inst, GridDelegate * d){
 
 	delegate = d;
 
+	initialize();
+
+	headerPen = CreatePen(PS_SOLID, 1, RGB(137, 140, 149));
+	gridlinesPen = CreatePen(PS_SOLID, 1, RGB(210, 210, 210));
+	solidWhiteBrush = CreateSolidBrush(RGB(255,255,255));
+	activeRowBrush = CreateSolidBrush(RGB(222,235,250));
+		
+	offscreenDC = CreateCompatibleDC(GetDC(hWnd));
+}
+
+void CinchGrid::initialize(){
 	for(int i=0; i<delegate->totalColumns(); i++){
 		addColumn(delegate->headerContent(i), delegate->columnWidth(i));
 		totalWidth += delegate->columnWidth(i);
@@ -111,13 +122,6 @@ CinchGrid::CinchGrid(HWND h, HINSTANCE inst, GridDelegate * d){
 	if ( left > client.right ){
 		overflowX = true;
 	}
-
-	headerPen = CreatePen(PS_SOLID, 1, RGB(137, 140, 149));
-	gridlinesPen = CreatePen(PS_SOLID, 1, RGB(210, 210, 210));
-	solidWhiteBrush = CreateSolidBrush(RGB(255,255,255));
-	activeRowBrush = CreateSolidBrush(RGB(222,235,250));
-		
-	offscreenDC = CreateCompatibleDC(GetDC(hWnd));
 }
 
 void CinchGrid::reloadData(){
@@ -1152,4 +1156,5 @@ int CinchGrid::GetActiveRow(){
 
 void CinchGrid::setDelegate(GridDelegate* d){
 	delegate = d;
+	initialize();
 }

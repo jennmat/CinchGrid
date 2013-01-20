@@ -75,6 +75,8 @@ private:
 
 	void addColumn(wchar_t * header, int width);
 
+	void initialize();
+
 	/*Editing */
 	void startEditing(int previous, int row, int col);
 	void stopHeaderTitleEditing();
