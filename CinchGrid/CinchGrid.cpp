@@ -130,6 +130,14 @@ void CinchGrid::reloadData(){
 	InvalidateRect(hWnd, NULL, true);
 }
 
+void CinchGrid::clearColumns(){
+	for(int i=0; i<numColumns; i++){
+		columns[i] = NULL;
+	}
+
+	numColumns = 0;
+}
+
 void CinchGrid::addColumn(wchar_t * header, int width) {
 	columns[numColumns] = new GridColumn(header, width);
 	numColumns++;

@@ -73,6 +73,7 @@ private:
 	/* Move to the previous row when the tab hits this control */
 	HWND reverseTabCapture;
 
+	void clearColumns();
 	void addColumn(wchar_t * header, int width);
 
 	void initialize();
