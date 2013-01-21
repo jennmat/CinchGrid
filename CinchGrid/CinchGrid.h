@@ -80,6 +80,7 @@ private:
 
 	/*Editing */
 	void startEditing(int previous, int row, int col);
+	void stopEditing();
 	void stopHeaderTitleEditing();
 	void startHeaderTitleEditing(int col);
 	void scrollEditors(int offsetX, int offsetY);

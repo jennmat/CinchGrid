@@ -491,6 +491,8 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		return TRUE;
 		}
 		break;
+	case WM_KILLFOCUS:
+		break;
 	case WM_MOUSEACTIVATE:
 		//SetFocus(hWnd);
 		return MA_ACTIVATE;
@@ -968,7 +970,20 @@ LRESULT CALLBACK CinchGrid::DetailWndProc(HWND hWnd, UINT message, WPARAM wParam
 		if ( uIdSubclass == HEADER_EDITOR ){
 			self->stopHeaderTitleEditing();
 		} else {
+			HWND dest = (HWND)wParam;
+			bool focusMovingToOtherCol = false;
+			for(int i=0; i<self->numColumns; i++){
+				if ( dest != NULL && dest == self->columns[i]->getEditor() ){
+					focusMovingToOtherCol = true;
+				}
+			}
+			if ( !focusMovingToOtherCol ) {
+				self->stopEditing();
+			}
 			self->delegate->editingFinished(hWnd, self->activeRow-1, uIdSubclass);
+			if( !focusMovingToOtherCol ) {
+				self->delegate->willLoseFocus();
+			}
 		}
 		break;
 	case WM_SETFOCUS:
@@ -1126,7 +1141,13 @@ void CinchGrid::startEditing(int previous, int row, int col){
 	editingInitialized = true;
 }
 
-
+void CinchGrid::stopEditing(){
+	for(int i=0; i<numColumns; i++){
+		if ( columns[i]->getEditor() != NULL ){
+			ShowWindow(columns[i]->getEditor(), SW_HIDE);
+		}
+	}
+}
 
 
 void CinchGrid::scrollEditors(int offsetX, int offsetY){
@@ -1164,6 +1185,7 @@ int CinchGrid::GetActiveRow(){
 
 void CinchGrid::setDelegate(GridDelegate* d){
 	delegate = d;
+	stopEditing(); 
 	clearColumns();
 	initialize();
 }

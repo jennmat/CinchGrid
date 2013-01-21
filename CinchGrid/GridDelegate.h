@@ -23,6 +23,7 @@ public:
 	virtual bool allowHeaderTitleEditing(int col)=0;
 	virtual HWND editorForColumn(int, HWND parent, HINSTANCE hInst) = 0;
 	virtual void editingFinished(HWND editor, int row, int col) = 0;
+	virtual void willLoseFocus()=0;
 
 	virtual bool allowNewRows() = 0;
 	virtual bool allowNewColumns() = 0;
@@ -63,6 +64,7 @@ public:
 	void setupEditorForCell(HWND editor, int row, int col);
 	HWND editorForColumn(int, HWND parent, HINSTANCE hInst) ;
 	void editingFinished(HWND editor, int row, int col);
+	void willLoseFocus();
 
 	bool allowNewRows();
 	bool allowNewColumns();

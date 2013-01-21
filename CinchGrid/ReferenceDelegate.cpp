@@ -94,6 +94,9 @@ bool ReferenceDelegate::allowEditing(int col){
 	return false;
 }
 
+void ReferenceDelegate::willLoseFocus(){
+}
+
 bool ReferenceDelegate::allowHeaderTitleEditing(int col){
 	return true;
 }
