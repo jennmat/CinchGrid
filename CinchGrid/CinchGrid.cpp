@@ -1167,3 +1167,7 @@ void CinchGrid::setDelegate(GridDelegate* d){
 	clearColumns();
 	initialize();
 }
+
+GridDelegate* CinchGrid::getDelegate(){
+	return delegate;
+}
