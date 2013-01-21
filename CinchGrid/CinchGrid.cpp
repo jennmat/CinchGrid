@@ -1164,5 +1164,6 @@ int CinchGrid::GetActiveRow(){
 
 void CinchGrid::setDelegate(GridDelegate* d){
 	delegate = d;
+	clearColumns();
 	initialize();
 }
