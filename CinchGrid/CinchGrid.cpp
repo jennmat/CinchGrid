@@ -124,8 +124,10 @@ void CinchGrid::initialize(){
 	}
 }
 
-void CinchGrid::reloadData(){
-	activeRow = -1;
+void CinchGrid::reloadData(bool preserveRowSelection){
+	if ( !preserveRowSelection ){
+		activeRow = -1;
+	}
 	SetupAndDrawOffscreenBitmap();
 	InvalidateRect(hWnd, NULL, true);
 }

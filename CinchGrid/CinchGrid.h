@@ -110,7 +110,7 @@ public:
 
 	void setDelegate(GridDelegate* d);
 	GridDelegate* getDelegate();
-	void reloadData();
+	void reloadData(bool preserveRowSelection);
 	int GetActiveRow();
 
 	CinchGrid(HWND hWnd, HINSTANCE hInst, GridDelegate * delegate);
