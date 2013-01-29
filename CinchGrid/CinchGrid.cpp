@@ -40,7 +40,7 @@ HWND CinchGrid::CreateCinchGrid(HWND parent, GridDelegate* delegate)
 	HWND hWnd = CreateWindowEx(0,
 		szClassName,
 		_T("Cinch Grid"),
-		WS_VISIBLE | WS_CHILD | WS_VSCROLL | WS_HSCROLL,
+		WS_VISIBLE | WS_CHILD,
 		0, 0, 500, 500,
 		parent,
 		NULL, GetModuleHandle(0), delegate);
@@ -124,10 +124,8 @@ void CinchGrid::initialize(){
 	}
 }
 
-void CinchGrid::reloadData(bool preserveRowSelection){
-	if ( !preserveRowSelection ){
-		activeRow = -1;
-	}
+void CinchGrid::reloadData(){
+	activeRow = -1;
 	SetupAndDrawOffscreenBitmap();
 	InvalidateRect(hWnd, NULL, true);
 }
@@ -474,201 +472,458 @@ void CinchGrid::DrawCellText(HDC hdc, RECT client)
 	}
 }
 
+LRESULT CinchGrid::OnKeyDown(WPARAM wParam, LPARAM lParam){
+	return 0;
+}
+
+LRESULT CinchGrid::OnLButtonUp(WPARAM wParam, LPARAM lParam){
+	if ( draggingHeader == true ){
+		int accum = 0;
+		int mouseXPos = GET_X_LPARAM(lParam); 
+		totalWidth = 0;
+		for(int i=0; i<activelyDraggedColumn; i++){
+			accum += columns[i]->getWidth();
+		}
+
+		columns[activelyDraggedColumn]->setWidth(mouseXPos - accum);	
+			
+		adjustEditors();
+
+		totalWidth = 0;
+		for(int i=0; i<numColumns; i++){
+			totalWidth += columns[i]->getWidth();
+		}
+		draggingHeader = false;
+	
+		SetupAndDrawOffscreenBitmap();
+
+		InvalidateRect(hWnd, NULL, true);
+	}
+
+	return 0;
+}
+
+LRESULT CinchGrid::OnLButtonDown(WPARAM wParam, LPARAM lParam){
+	RECT repaint;
+	repaint.left = activeCol * COL_SPACING - 2;
+	repaint.right = repaint.left + COL_SPACING + 4;
+	repaint.top = activeRow * delegate->rowHeight() - 2;
+	repaint.bottom = repaint.top + delegate->rowHeight() + 4;
+	//InvalidateRect(hWnd, NULL, true);
+
+	int xPos = GET_X_LPARAM(lParam); 
+	int yPos = GET_Y_LPARAM(lParam); 
+
+	if ( yPos < delegate->rowHeight() ){
+		int accum = 0;
+		int activeCol = 0;
+		for(int i=0; i<numColumns; i++){
+			accum += columns[i]->getWidth();
+			if ( abs(accum-xPos) < 10 ){
+				draggingHeader = true;
+				activelyDraggedColumn = i;
+			}
+			if ( accum > xPos ){
+				activeCol = i;
+				break;
+			}
+		}
+		if ( !draggingHeader ) {
+			if ( delegate->allowHeaderTitleEditing(activeCol) ){
+				startHeaderTitleEditing(activeCol);
+				InvalidateRect(hWnd, NULL, true);
+			}
+		}
+	} else {
+
+	
+		int accum = 0;
+		for(int i=0; i<numColumns; i++){
+			accum += columns[i]->getWidth();
+			if ( accum > xPos ){
+				activeCol = i;
+				break;
+			}
+		}
+		int clickedRow = (yPos + scrollOffsetY) / delegate->rowHeight() - 1;
+			
+
+		if ( delegate->allowNewRows() && clickedRow >= delegate->totalRows() ){
+			int newRows = clickedRow + 1 - delegate->totalRows();
+			for(int i=0; i<newRows; i++){
+				delegate->prepareNewRow(clickedRow);
+			}
+			totalHeight = (delegate->totalRows() + 1) * delegate->rowHeight();
+		}
+
+		if ( clickedRow < delegate->totalRows() ){
+			int previousActiveRow = activeRow;
+			activeRow = (yPos + scrollOffsetY) / delegate->rowHeight();
+				
+			RECT client;
+			GetClientRect(hWnd, &client);
+	
+			if( delegate->rowSelection() ){
+	
+				
+				RECT r2;
+				r2.left = 0;
+				r2.right = client.right;
+				r2.top = previousActiveRow * delegate->rowHeight() - 2;
+				r2.bottom = repaint.top + delegate->rowHeight() + 4;
+				//InvalidateRect(hWnd, NULL, true);
+
+				repaint.left = 0;
+				repaint.right = client.right;
+				repaint.top = activeRow * delegate->rowHeight() - 2;
+				repaint.bottom = repaint.top + delegate->rowHeight() + 4;
+				//InvalidateRect(hWnd, &repaint, true);
+				SetupWindowOffset();
+				if (previousActiveRow > 0 ){
+					ClearActiveRow(previousActiveRow, offscreenDC, client);
+				}
+				DrawActiveRow(offscreenDC, client);
+				ClearWindowOffset();
+				//InvalidateRect(hWnd, &repaint, true);
+				//InvalidateRect(hWnd, &r2, true);
+				InvalidateRect(hWnd, NULL, true);
+				
+				PostMessage(GetParent(hWnd), CINCHGRID_ROW_SELECTED, 0, 0);
+			}
+
+			startEditing(previousActiveRow-1, activeRow-1, activeCol);
+
+			if( previousActiveRow != -1 ){
+				SetupWindowOffset();
+				DrawTextForRow(offscreenDC, client, previousActiveRow-1); 
+				ClearWindowOffset();
+				InvalidateRect(hWnd, NULL, true);
+			}
+		}
+	}
+
+	SetFocus(hWnd);
+	return MA_ACTIVATEANDEAT;
+}
+
+LRESULT CinchGrid::OnMouseMove(WPARAM wParam, LPARAM lParam){
+	int mouseXPos = GET_X_LPARAM(lParam); 
+	int mouseYPos = GET_Y_LPARAM(lParam); 
+		
+	if ( draggingHeader ){
+		int accum = 0;
+		for(int i=0; i<activelyDraggedColumn; i++){
+			accum += columns[i]->getWidth();
+		}
+		if ( mouseXPos - accum > 10 ){
+			RECT client;
+			GetClientRect(hWnd, &client);
+			
+			RECT invalidate1;
+			invalidate1.left = draggedXPos - 1;
+			invalidate1.right = draggedXPos + 1;
+			invalidate1.top = 0;
+			invalidate1.bottom = client.bottom;
+
+
+			draggedXPos = mouseXPos;
+			RECT invalidate;
+			invalidate.left = mouseXPos - 1;
+			invalidate.right = mouseXPos + 1;
+			invalidate.top = 0;
+			invalidate.bottom = client.bottom;
+			
+			InvalidateRect(hWnd, &invalidate1, true);
+			InvalidateRect(hWnd, &invalidate, true);
+		}
+	}
+
+	if ( mouseYPos < delegate->rowHeight() ){
+		int accum = 0;
+		for(int i=0; i<numColumns; i++){
+			accum += columns[i]->getWidth();
+			if ( abs(accum-mouseXPos) < 10 ){
+				SetCursor(LoadCursor(NULL, IDC_SIZEWE));
+			}
+		}
+	}
+
+	return 0;
+}
+
+LRESULT CinchGrid::OnSize(WPARAM wParam, LPARAM lParam){
+	RECT client;
+	GetClientRect(hWnd, &client);
+		
+	SetupAndDrawOffscreenBitmap();
+	InvalidateRect(hWnd, NULL, true);
+
+	SetScroll(hWnd);
+	return 0;
+}
+
+LRESULT CinchGrid::OnPaint(WPARAM wParam, LPARAM lParam){
+	
+	HDC          hdc;
+    PAINTSTRUCT  ps;
+
+	hdc = BeginPaint(hWnd, &ps);
+		
+	
+	BitBlt(hdc, ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right, ps.rcPaint.bottom, offscreenDC, ps.rcPaint.left + scrollOffsetX, ps.rcPaint.top + scrollOffsetY - windowOffsetY, SRCCOPY);
+		
+	if( draggingHeader ){
+		DrawHeaderDragGuideline(hdc, ps.rcPaint);
+	}
+
+	if ( delegate->stickyHeaders() ){
+		DrawHeader(hdc, ps.rcPaint, true);
+	}
+
+	
+	
+	/* Draws a visualization of the back buffers */
+	//HPEN red = CreatePen(PS_SOLID, 1, RGB(255,0,0));
+	//HPEN green = Create
+	//Pen(PS_SOLID, 1, RGB(0,255,0));
+	//HPEN blue = CreatePen(PS_SOLID, 1, RGB(0,0,255));
+	//SelectObject(hdc, red);
+	//int xfac = 8;
+	//int yfac = totalHeight / 400;
+			
+	//Rectangle(hdc, 600, 20, 600+(totalWidth/xfac), 20+(totalHeight/yfac));
+
+	//RECT client;
+	//GetWindowRect(hWnd, &client);
+
+	//SelectObject(hdc, blue);
+	//Rectangle(hdc, 600, 20+(windowOffsetY/yfac), 600+(totalWidth/xfac), 20+((windowOffsetY + offscreenHeight)/yfac));
+
+	//SelectObject(hdc, green);
+	//Rectangle(hdc, 600, 20+(scrollOffsetY/yfac), 600+(totalWidth/xfac), 20+((client.bottom+scrollOffsetY)/yfac));
+	
+	EndPaint(hWnd, &ps);
+
+	return 0;
+}
+
+LRESULT CinchGrid::OnHScroll(WPARAM wParam, LPARAM lParam){
+	int xpos = HIWORD(wParam);
+	int cmd = LOWORD(wParam);
+	if ( cmd == SB_THUMBPOSITION || cmd == SB_THUMBTRACK ){
+		SetScrollPos(hWnd, SB_HORZ, xpos, true);
+		int lastX = scrollOffsetX;
+		scrollOffsetX = xpos;
+		scrollEditors(scrollOffsetX - lastX, 0);
+		AdjustWindow();
+		InvalidateRect(hWnd, NULL, true);
+	} else if ( cmd == SB_PAGERIGHT ){
+		RECT client;
+		GetClientRect(hWnd, &client);
+		scrollOffsetX += client.right;
+		if( scrollOffsetX > totalWidth - client.right ){
+			scrollOffsetX = totalWidth - client.right;
+		} else {
+			scrollEditors(client.right, 0);
+		}
+		SetScrollPos(hWnd, SB_HORZ, scrollOffsetX, true);
+		AdjustWindow();
+		InvalidateRect(hWnd, NULL, true);
+		
+	} else if ( cmd == SB_PAGELEFT ){
+		RECT client;
+		GetClientRect(hWnd, &client);
+		scrollOffsetX -= client.right;
+		if( scrollOffsetX < 0 ) { 
+			scrollOffsetX = 0;
+		} else {
+			scrollEditors(-client.right, 0);
+		}
+		SetScrollPos(hWnd, SB_HORZ, scrollOffsetX, true);
+		AdjustWindow();
+		InvalidateRect(hWnd, NULL, true);
+	} else if ( cmd == SB_LINELEFT ) {
+		RECT client;
+		GetClientRect(hWnd, &client);
+		scrollOffsetX -= 10;
+		if ( scrollOffsetX < 0 ) {
+			scrollOffsetX = 0;
+		} else {
+			scrollEditors(-10, 0);
+		}
+		SetScrollPos(hWnd, SB_HORZ, scrollOffsetX, true);
+		AdjustWindow();
+		InvalidateRect(hWnd, NULL, true);
+
+	} else if ( cmd == SB_LINERIGHT ){
+
+		RECT client;
+		GetClientRect(hWnd, &client);
+		scrollOffsetX += 10;
+		if( scrollOffsetX > totalWidth - client.right ){
+			scrollOffsetX = totalWidth - client.right;
+		} else {
+			scrollEditors(10, 0);
+		}
+		SetScrollPos(hWnd, SB_HORZ, scrollOffsetX, true);
+		AdjustWindow();
+		InvalidateRect(hWnd, NULL, true);
+	}
+	return 0;
+}
+
+LRESULT CinchGrid::OnVScroll(WPARAM wParam, LPARAM lParam){
+	int ypos = HIWORD(wParam);
+	int cmd = LOWORD(wParam); 
+	RECT client;
+	GetClientRect(hWnd, &client);
+	int lastY = scrollOffsetY;
+			
+	if ( cmd == SB_THUMBPOSITION || cmd == SB_THUMBTRACK ){
+		SetScrollPos(hWnd, SB_VERT, ypos, true);
+		scrollOffsetY = ypos;
+		scrollEditors(0, scrollOffsetY - lastY);
+		AdjustWindow();
+		InvalidateRect(hWnd, NULL, true);
+	} else if ( cmd == SB_PAGEDOWN ){
+		scrollOffsetY += client.bottom;
+		if( scrollOffsetY > totalHeight - client.bottom ){
+			scrollOffsetY = totalHeight - client.bottom;
+			scrollEditors(0, scrollOffsetY - lastY);
+		} else {
+			scrollEditors(0, client.bottom);				
+		}
+		SetScrollPos(hWnd, SB_VERT, scrollOffsetY, true);
+		AdjustWindow();
+		InvalidateRect(hWnd, NULL, true);
+	} else if ( cmd == SB_PAGEUP ){
+		scrollOffsetY -= client.bottom;
+		if( scrollOffsetY < 0 ) {
+			scrollOffsetY = 0;
+			scrollEditors(0, scrollOffsetY - lastY);
+
+		} else {
+			scrollEditors(0, 0 - client.bottom);
+		}
+		SetScrollPos(hWnd, SB_VERT, scrollOffsetY, true);
+		AdjustWindow();
+		InvalidateRect(hWnd, NULL, true);
+	} else if ( cmd == SB_LINEDOWN ){
+		scrollOffsetY += delegate->rowHeight();
+		if( scrollOffsetY > totalHeight - client.bottom ){
+			scrollOffsetY = totalHeight - client.bottom;
+		} else {
+			scrollEditors(0, delegate->rowHeight());
+		}
+		SetScrollPos(hWnd, SB_VERT, scrollOffsetY, true);
+			
+		AdjustWindow();
+		InvalidateRect(hWnd, NULL, true);
+	} else if ( cmd == SB_LINEUP ){
+		scrollOffsetY -= delegate->rowHeight();
+		if( scrollOffsetY < 0 ){
+			scrollOffsetY = 0;
+		} else {
+			scrollEditors(0, 0 - delegate->rowHeight());
+			SetScrollPos(hWnd, SB_VERT, scrollOffsetY, true);
+			AdjustWindow();
+			InvalidateRect(hWnd, NULL, true);
+		}
+	}
+
+	return 0;
+}
+
+LRESULT CinchGrid::OnMouseWheel(WPARAM wParam, LPARAM lParam){
+	if( overflowY ){
+		int zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+		int prevOffsetY = scrollOffsetY;
+		scrollOffsetY += 0 - zDelta;
+		RECT client;
+		GetClientRect(hWnd, &client);
+		if( scrollOffsetY > totalHeight - client.bottom ){
+			scrollOffsetY = totalHeight - client.bottom;
+			
+		} else if ( scrollOffsetY < 0 ){
+			scrollOffsetY = 0;
+		}
+		
+		scrollEditors(0, scrollOffsetY - prevOffsetY);
+		
+		SetScrollPos(hWnd, SB_VERT, scrollOffsetY, true);
+		AdjustWindow();
+		InvalidateRect(hWnd, NULL, true);
+	}
+	return 0;
+}
+
+
+LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam){
+	
+	CinchGrid* grid = (CinchGrid *)GetWindowLong(hWnd, GWL_USERDATA);
+	CREATESTRUCT* c;
+
+	switch (message)
+	{
+	case WM_NCCREATE:
+		c = (CREATESTRUCT*)lParam;
+		grid = new CinchGrid(hWnd, GetModuleHandle(0), (GridDelegate *)c->lpCreateParams);
+		SetWindowLong(hWnd, GWL_USERDATA, (LONG)grid);
+		return TRUE;
+	case WM_ERASEBKGND:
+		return 1;
+	
+	case WM_MOUSEACTIVATE:
+		SetFocus(hWnd);
+		return MA_ACTIVATE;
+	case WM_KEYDOWN:
+		return grid->OnKeyDown(wParam, lParam);
+	case WM_MOUSEMOVE:
+		return grid->OnMouseMove(wParam, lParam);
+	case WM_PAINT:
+		return grid->OnPaint(wParam, lParam);
+	case WM_LBUTTONDOWN:
+		return grid->OnLButtonDown(wParam, lParam);
+	case WM_LBUTTONUP:
+		return grid->OnLButtonUp(wParam, lParam);
+	case WM_SIZE:
+		return grid->OnSize(wParam, lParam);
+	case WM_MOUSEWHEEL:
+		return grid->OnMouseWheel(wParam, lParam);
+	case WM_HSCROLL:
+		return grid->OnHScroll(wParam, lParam);
+	case WM_VSCROLL:
+		return grid->OnVScroll(wParam, lParam);
+	default:
+		return DefWindowProc(hWnd, message, wParam, lParam);
+	}
+
+	return 0;
+}
+
+/*
+
 LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	int wmId, wmEvent;
 	PAINTSTRUCT ps;
 	HDC hdc;
 
-	CinchGrid* self = (CinchGrid *)GetWindowLong(hWnd, GWL_USERDATA);
+	
 
 	
 	switch (message)
 	{
-	case WM_NCCREATE:
-		{
-		CREATESTRUCT* c = (CREATESTRUCT*)lParam;
-		CinchGrid * grid = new CinchGrid(hWnd, GetModuleHandle(0), (GridDelegate *)c->lpCreateParams);
-		SetWindowLong(hWnd, GWL_USERDATA, (LONG)grid);
-		return TRUE;
-		}
-		break;
-	case WM_KILLFOCUS:
-		break;
-	case WM_MOUSEACTIVATE:
-		//SetFocus(hWnd);
-		return MA_ACTIVATE;
-	case WM_KEYUP:
-		OutputDebugStringW(TEXT("KEYUP"));
-		break;
 	case WM_MOUSEMOVE:	
 		{
-		int mouseXPos = GET_X_LPARAM(lParam); 
-		int mouseYPos = GET_Y_LPARAM(lParam); 
 		
-		if ( self->draggingHeader ){
-			int accum = 0;
-			for(int i=0; i<self->activelyDraggedColumn; i++){
-				accum += self->columns[i]->getWidth();
-			}
-			if ( mouseXPos - accum > 10 ){
-				RECT client;
-				GetClientRect(hWnd, &client);
-
-				RECT invalidate1;
-				invalidate1.left = self->draggedXPos - 1;
-				invalidate1.right = self->draggedXPos + 1;
-				invalidate1.top = 0;
-				invalidate1.bottom = client.bottom;
-
-
-				self->draggedXPos = mouseXPos;
-				RECT invalidate;
-				invalidate.left = mouseXPos - 1;
-				invalidate.right = mouseXPos + 1;
-				invalidate.top = 0;
-				invalidate.bottom = client.bottom;
-
-				InvalidateRect(hWnd, &invalidate1, true);
-				InvalidateRect(hWnd, &invalidate, true);
-			}
-		}
-		if ( mouseYPos < self->delegate->rowHeight() ){
-			int accum = 0;
-			for(int i=0; i<self->numColumns; i++){
-				accum += self->columns[i]->getWidth();
-				if ( abs(accum-mouseXPos) < 10 ){
-					SetCursor(LoadCursor(NULL, IDC_SIZEWE));
-				}
-			}
-		
-		}
 		break;
 		}
 	case WM_LBUTTONUP:
-		if ( self->draggingHeader == true ){
-			int accum = 0;
-			int mouseXPos = GET_X_LPARAM(lParam); 
-			self->totalWidth = 0;
-			for(int i=0; i<self->activelyDraggedColumn; i++){
-				accum += self->columns[i]->getWidth();
-			}
-
-			self->columns[self->activelyDraggedColumn]->setWidth(mouseXPos - accum);	
-			
-			self->adjustEditors();
-
-			self->totalWidth = 0;
-			for(int i=0; i<self->numColumns; i++){
-				self->totalWidth += self->columns[i]->getWidth();
-			}
-			self->draggingHeader = false;
-	
-			self->SetupAndDrawOffscreenBitmap();
-
-			InvalidateRect(hWnd, NULL, true);
-		}
-
-		break;
+		
 	case WM_LBUTTONDOWN:
 		{
-		RECT repaint;
-		repaint.left = self->activeCol * COL_SPACING - 2;
-		repaint.right = repaint.left + COL_SPACING + 4;
-		repaint.top = self->activeRow * self->delegate->rowHeight() - 2;
-		repaint.bottom = repaint.top + self->delegate->rowHeight() + 4;
-		//InvalidateRect(hWnd, NULL, true);
-
-		int xPos = GET_X_LPARAM(lParam); 
-		int yPos = GET_Y_LPARAM(lParam); 
-
-		if ( yPos < self->delegate->rowHeight() ){
-			int accum = 0;
-			int activeCol = 0;
-			for(int i=0; i<self->numColumns; i++){
-				accum += self->columns[i]->getWidth();
-				if ( abs(accum-xPos) < 10 ){
-					self->draggingHeader = true;
-					self->activelyDraggedColumn = i;
-				}
-				if ( accum > xPos ){
-					activeCol = i;
-					break;
-				}
-			}
-			if ( !self->draggingHeader ) {
-				if ( self->delegate->allowHeaderTitleEditing(activeCol) ){
-					self->startHeaderTitleEditing(activeCol);
-					InvalidateRect(hWnd, NULL, true);
-				}
-			}
-		} else {
-
-	
-			int accum = 0;
-			for(int i=0; i<self->numColumns; i++){
-				accum += self->columns[i]->getWidth();
-				if ( accum > xPos ){
-					self->activeCol = i;
-					break;
-				}
-			}
-			int clickedRow = (yPos + self->scrollOffsetY) / self->delegate->rowHeight() - 1;
-			
-
-			if ( self->delegate->allowNewRows() && clickedRow >= self->delegate->totalRows() ){
-				int newRows = clickedRow + 1 - self->delegate->totalRows();
-				for(int i=0; i<newRows; i++){
-					self->delegate->prepareNewRow(clickedRow);
-				}
-				self->totalHeight = (self->delegate->totalRows() + 1) * self->delegate->rowHeight();
-			}
-
-			if ( clickedRow < self->delegate->totalRows() ){
-				int previousActiveRow = self->activeRow;
-				self->activeRow = (yPos + self->scrollOffsetY) / self->delegate->rowHeight();
-				
-				RECT client;
-				GetClientRect(hWnd, &client);
-	
-				if( self->delegate->rowSelection() ){
-	
-				
-					RECT r2;
-					r2.left = 0;
-					r2.right = client.right;
-					r2.top = previousActiveRow * self->delegate->rowHeight() - 2;
-					r2.bottom = repaint.top + self->delegate->rowHeight() + 4;
-					//InvalidateRect(hWnd, NULL, true);
-
-					repaint.left = 0;
-					repaint.right = client.right;
-					repaint.top = self->activeRow * self->delegate->rowHeight() - 2;
-					repaint.bottom = repaint.top + self->delegate->rowHeight() + 4;
-					//InvalidateRect(hWnd, &repaint, true);
-					self->SetupWindowOffset();
-					if (previousActiveRow > 0 ){
-						self->ClearActiveRow(previousActiveRow, self->offscreenDC, client);
-					}
-					self->DrawActiveRow(self->offscreenDC, client);
-					self->ClearWindowOffset();
-					//InvalidateRect(hWnd, &repaint, true);
-					//InvalidateRect(hWnd, &r2, true);
-					InvalidateRect(hWnd, NULL, true);
-				
-					PostMessage(GetParent(hWnd), CINCHGRID_ROW_SELECTED, 0, 0);
-				}
-
-				self->startEditing(previousActiveRow-1, self->activeRow-1, self->activeCol);
-
-				if( previousActiveRow != -1 ){
-					self->SetupWindowOffset();
-					self->DrawTextForRow(self->offscreenDC, client, previousActiveRow-1); 
-					self->ClearWindowOffset();
-					InvalidateRect(hWnd, NULL, true);
-				}
-			}
-		}
+		
 		}
 		break;
 
@@ -686,230 +941,38 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		}
 		break;
 	case WM_SIZE:
-		RECT client;
-		GetClientRect(hWnd, &client);
-		if ( self != NULL ){
-			self->SetupAndDrawOffscreenBitmap();
-			InvalidateRect(hWnd, NULL, true);
-
-			self->SetScroll(hWnd);
-		}
-		break;
-	case WM_ERASEBKGND:
-		return 1;
+		
 	case WM_PAINT:
 		{
-		hdc = BeginPaint(hWnd, &ps);
 		
-		//POINT origin;
-		//GetWindowOrgEx(hdc, &origin);
-		//SetWindowOrgEx(hdc, origin.x + scrollOffsetX, origin.y + scrollOffsetY, 0);
-
-		//OffsetRect(&ps.rcPaint, scrollOffsetX, scrollOffsetY);
-		
-
-		if( self != NULL ){
-			
-			BitBlt(hdc, ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right, ps.rcPaint.bottom, self->offscreenDC, ps.rcPaint.left + self->scrollOffsetX, ps.rcPaint.top + self->scrollOffsetY - self->windowOffsetY, SRCCOPY);
-		
-			if( self->draggingHeader ){
-				self->DrawHeaderDragGuideline(hdc, ps.rcPaint);
-			}
-
-			if ( self->delegate->stickyHeaders() ){
-				self->DrawHeader(hdc, ps.rcPaint, true);
-			}
-
-			//if ( self->activeRow >= 0 ){
-			//	self->DrawActiveRow(hdc, ps.rcPaint);
-			//}
-
-			/*
-			HPEN red = CreatePen(PS_SOLID, 1, RGB(255,0,0));
-			HPEN green = Create
-			Pen(PS_SOLID, 1, RGB(0,255,0));
-			HPEN blue = CreatePen(PS_SOLID, 1, RGB(0,0,255));
-			SelectObject(hdc, red);
-			int xfac = 8;
-			int yfac = self->totalHeight / 400;
-			
-			Rectangle(hdc, 600, 20, 600+(self->totalWidth/xfac), 20+(self->totalHeight/yfac));
-
-			RECT client;
-			GetWindowRect(hWnd, &client);
-
-			SelectObject(hdc, blue);
-			Rectangle(hdc, 600, 20+(self->windowOffsetY/yfac), 600+(self->totalWidth/xfac), 20+((self->windowOffsetY + self->offscreenHeight)/yfac));
-
-			SelectObject(hdc, green);
-			Rectangle(hdc, 600, 20+(self->scrollOffsetY/yfac), 600+(self->totalWidth/xfac), 20+((client.bottom+self->scrollOffsetY)/yfac));
-			*/
-		}
-
-		EndPaint(hWnd, &ps);
-
-		//SetWindowOrgEx(hdc, origin.x, origin.y, 0);
-		}
 		break;
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
 	case WM_VSCROLL:
 		{
-		int ypos = HIWORD(wParam);
-		int cmd = LOWORD(wParam); 
-		RECT client;
-		GetClientRect(hWnd, &client);
-		int lastY = self->scrollOffsetY;
-			
-		if ( cmd == SB_THUMBPOSITION || cmd == SB_THUMBTRACK ){
-			SetScrollPos(hWnd, SB_VERT, ypos, true);
-			self->scrollOffsetY = ypos;
-			self->scrollEditors(0, self->scrollOffsetY - lastY);
-			self->AdjustWindow();
-			InvalidateRect(hWnd, NULL, true);
-		} else if ( cmd == SB_PAGEDOWN ){
-			self->scrollOffsetY += client.bottom;
-			if( self->scrollOffsetY > self->totalHeight - client.bottom ){
-				self->scrollOffsetY = self->totalHeight - client.bottom;
-				self->scrollEditors(0, self->scrollOffsetY - lastY);
-			} else {
-				self->scrollEditors(0, client.bottom);				
-			}
-			SetScrollPos(hWnd, SB_VERT, self->scrollOffsetY, true);
-			self->AdjustWindow();
-			InvalidateRect(hWnd, NULL, true);
-		} else if ( cmd == SB_PAGEUP ){
-			self->scrollOffsetY -= client.bottom;
-			if( self->scrollOffsetY < 0 ) {
-				self->scrollOffsetY = 0;
-				self->scrollEditors(0, self->scrollOffsetY - lastY);
-
-			} else {
-				self->scrollEditors(0, 0 - client.bottom);
-			}
-			SetScrollPos(hWnd, SB_VERT, self->scrollOffsetY, true);
-			self->AdjustWindow();
-			InvalidateRect(hWnd, NULL, true);
-		} else if ( cmd == SB_LINEDOWN ){
-			self->scrollOffsetY += self->delegate->rowHeight();
-			if( self->scrollOffsetY > self->totalHeight - client.bottom ){
-				self->scrollOffsetY = self->totalHeight - client.bottom;
-			} else {
-				self->scrollEditors(0, self->delegate->rowHeight());
-			}
-			SetScrollPos(hWnd, SB_VERT, self->scrollOffsetY, true);
-			
-			self->AdjustWindow();
-			InvalidateRect(hWnd, NULL, true);
-		} else if ( cmd == SB_LINEUP ){
-			self->scrollOffsetY -= self->delegate->rowHeight();
-			if( self->scrollOffsetY < 0 ){
-				self->scrollOffsetY = 0;
-			} else {
-				self->scrollEditors(0, 0 - self->delegate->rowHeight());
-				SetScrollPos(hWnd, SB_VERT, self->scrollOffsetY, true);
-				self->AdjustWindow();
-				InvalidateRect(hWnd, NULL, true);
-			}
-			
-		}
+		
 		return 0;
 		}
 	case WM_HSCROLL:
 		{
-		int xpos = HIWORD(wParam);
-		int cmd = LOWORD(wParam);
-		if ( cmd == SB_THUMBPOSITION || cmd == SB_THUMBTRACK ){
-			SetScrollPos(hWnd, SB_HORZ, xpos, true);
-			int lastX = self->scrollOffsetX;
-			self->scrollOffsetX = xpos;
-			self->scrollEditors(self->scrollOffsetX - lastX, 0);
-			self->AdjustWindow();
-			InvalidateRect(hWnd, NULL, true);
-		} else if ( cmd == SB_PAGERIGHT ){
-			RECT client;
-			GetClientRect(hWnd, &client);
-			self->scrollOffsetX += client.right;
-			if( self->scrollOffsetX > self->totalWidth - client.right ){
-				self->scrollOffsetX = self->totalWidth - client.right;
-			} else {
-				self->scrollEditors(client.right, 0);
-			}
-			SetScrollPos(hWnd, SB_HORZ, self->scrollOffsetX, true);
-			self->AdjustWindow();
-			InvalidateRect(hWnd, NULL, true);
 		
-		} else if ( cmd == SB_PAGELEFT ){
-			RECT client;
-			GetClientRect(hWnd, &client);
-			self->scrollOffsetX -= client.right;
-			if( self->scrollOffsetX < 0 ) { 
-				self->scrollOffsetX = 0;
-			} else {
-				self->scrollEditors(-client.right, 0);
-			}
-			SetScrollPos(hWnd, SB_HORZ, self->scrollOffsetX, true);
-			self->AdjustWindow();
-			InvalidateRect(hWnd, NULL, true);
-		} else if ( cmd == SB_LINELEFT ) {
-			RECT client;
-			GetClientRect(hWnd, &client);
-			self->scrollOffsetX -= 10;
-			if ( self->scrollOffsetX < 0 ) {
-				self->scrollOffsetX = 0;
-			} else {
-				self->scrollEditors(-10, 0);
-			}
-			SetScrollPos(hWnd, SB_HORZ, self->scrollOffsetX, true);
-			self->AdjustWindow();
-			InvalidateRect(hWnd, NULL, true);
-
-		} else if ( cmd == SB_LINERIGHT ){
-
-			RECT client;
-			GetClientRect(hWnd, &client);
-			self->scrollOffsetX += 10;
-			if( self->scrollOffsetX > self->totalWidth - client.right ){
-				self->scrollOffsetX = self->totalWidth - client.right;
-			} else {
-				self->scrollEditors(10, 0);
-			}
-			SetScrollPos(hWnd, SB_HORZ, self->scrollOffsetX, true);
-			self->AdjustWindow();
-			InvalidateRect(hWnd, NULL, true);
-		}
-		return 0;
 		}
 	case WM_MOUSEWHEEL:
 		{
-		if( self->overflowY ){
-			int zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-			int prevOffsetY = self->scrollOffsetY;
-			self->scrollOffsetY += 0 - zDelta;
-			RECT client;
-			GetClientRect(self->hWnd, &client);
-			if( self->scrollOffsetY > self->totalHeight - client.bottom ){
-				self->scrollOffsetY = self->totalHeight - client.bottom;
-			
-			} else if ( self->scrollOffsetY < 0 ){
-				self->scrollOffsetY = 0;
-			}
 		
-			self->scrollEditors(0, self->scrollOffsetY - prevOffsetY);
-		
-			SetScrollPos(hWnd, SB_VERT, self->scrollOffsetY, true);
-			self->AdjustWindow();
-			InvalidateRect(hWnd, NULL, true);
-			}
-		}
 		break;
 	default:
+		return DefWindowProc(hWnd, message, wParam, lParam);
 		break;
 	}
 
-	return DefWindowProc(hWnd, message, wParam, lParam);
+	return 0;
+	
+	
 }
+
+*/
 
 
 LRESULT CALLBACK CinchGrid::DetailWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
@@ -1065,7 +1128,6 @@ void CinchGrid::startHeaderTitleEditing(int col){
 	editingHeader = col;
 	SetWindowPos(headerEditor, HWND_TOP, x, 0, columns[col]->getWidth(), delegate->rowHeight(), 0);
 	ShowWindow(headerEditor, SW_SHOW);
-
 	SetFocus(headerEditor);
 }
 

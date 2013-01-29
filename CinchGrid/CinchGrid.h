@@ -103,14 +103,23 @@ private:
 	void ClearActiveRow(int row, HDC hdc, RECT client);
 	
 
-	
+	LRESULT OnKeyDown(WPARAM wParam, LPARAM lParam);
+	LRESULT OnMouseMove(WPARAM wParam, LPARAM lParam);
+	LRESULT OnPaint(WPARAM wParam, LPARAM lParam);
+	LRESULT OnSize(WPARAM wParam, LPARAM lParam);
+	LRESULT OnLButtonDown(WPARAM wParam, LPARAM lParam);
+	LRESULT OnLButtonUp(WPARAM wParam, LPARAM lParam);
+	LRESULT OnVScroll(WPARAM wParam, LPARAM lParam);
+	LRESULT OnHScroll(WPARAM wParam, LPARAM lParam);
+	LRESULT OnMouseWheel(WPARAM wParam, LPARAM lParam);
+
 public:
 	static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 	static LRESULT CALLBACK DetailWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
 
 	void setDelegate(GridDelegate* d);
 	GridDelegate* getDelegate();
-	void reloadData(bool preserveRowSelection);
+	void reloadData();
 	int GetActiveRow();
 
 	CinchGrid(HWND hWnd, HINSTANCE hInst, GridDelegate * delegate);
