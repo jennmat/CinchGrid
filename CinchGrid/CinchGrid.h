@@ -87,6 +87,11 @@ private:
 	void adjustEditors();
 	void SetScroll(HWND hWnd);
 
+	void ScrollRowIntoView(int row);
+
+	void PageDown();
+	void PageUp();
+
 	/* Painting */
 	void AdjustWindow();
 	void SetupWindowOffset();

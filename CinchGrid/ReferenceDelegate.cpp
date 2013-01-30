@@ -4,8 +4,8 @@
 
 ReferenceDelegate::ReferenceDelegate(){
 	int i,j;
-	rowCount = 10;
-	columnCount = 1;
+	rowCount = 1000;
+	columnCount = 5;
 
 	for(i=0;i<MAX_ROWS;i++){
 		for(j=0; j<MAX_COLUMNS; j++){
@@ -49,18 +49,18 @@ const wchar_t* ReferenceDelegate::cellContent(int row, int col) {
 	//	return data[row][col];
 	//}
 	
-	if ( col == 0 ){
+	//if ( col == 0 ){
 		wchar_t* buffer = (wchar_t*)malloc(20*sizeof(wchar_t));
-		_itow_s((row+1)*(col+1), buffer, 20, 10);
+		_itow_s(row, buffer, 20, 10);
 
 		return buffer;
-	}
+//	}
 
 	//if( col == 1 ){
 	//		return TEXT("");
 	//	}
 	//return TEXT("Random Text");
-	return TEXT("");
+	//return TEXT("");
 }
 
 HFONT ReferenceDelegate::getFont(){

@@ -474,19 +474,43 @@ void CinchGrid::DrawCellText(HDC hdc, RECT client)
 
 LRESULT CinchGrid::OnKeyDown(WPARAM wParam, LPARAM lParam){
 	
+	RECT client;
+	GetClientRect(hWnd, &client);
+	int pageSize = client.bottom / delegate->rowHeight();
+
 	if ( activeRow > -1 ){
 		switch(wParam){
 		case VK_UP:
 			if( activeRow - 1 > 0 ){
 				SetActiveRow(activeRow-1);
+				ScrollRowIntoView(activeRow+1);
 			}
 			break;
 		case VK_DOWN:
 			if ( activeRow + 1 <= delegate->totalRows() ){
 				SetActiveRow(activeRow+1);
+				ScrollRowIntoView(activeRow+1);	
 			}
 			break;
+		case VK_NEXT:
+			if( activeRow + pageSize > delegate->totalRows() ){
+				SetActiveRow(delegate->totalRows());
+			} else {
+				SetActiveRow(activeRow+pageSize);
+			}
+			ScrollRowIntoView(activeRow);	
+			break;
+		case VK_PRIOR:
+			if( activeRow - pageSize < 1 ){
+				SetActiveRow(1);
+			} else {
+				SetActiveRow(activeRow - pageSize);
+			}
+			ScrollRowIntoView(activeRow);	
+			break;
 		}
+
+		
 	}
 	SetFocus(hWnd);
 	return MA_ACTIVATEANDEAT;
@@ -499,6 +523,26 @@ LRESULT CinchGrid::OnKeyUp(WPARAM wParam, LPARAM lParam){
 	return MA_ACTIVATEANDEAT;
 }
 
+
+void CinchGrid::ScrollRowIntoView(int row){
+	RECT client;
+	GetClientRect(hWnd, &client);
+	int windowPos = row * delegate->rowHeight() - windowOffsetY;
+	bool offScreen = windowPos > (client.bottom * 3 / 4);
+	if  (offScreen ) {
+		scrollOffsetY = row * delegate->rowHeight() - ( client.bottom * 3 / 4 );
+		if ( scrollOffsetY < 0 ) scrollOffsetY = 0 ;
+		SetScrollPos(hWnd, SB_VERT, scrollOffsetY, true);
+		AdjustWindow();
+		InvalidateRect(hWnd, NULL, true);
+	}
+	if ( windowPos < 0 ){
+		scrollOffsetY = 0;
+		SetScrollPos(hWnd, SB_VERT, scrollOffsetY, true);
+		AdjustWindow();
+		InvalidateRect(hWnd, NULL, true);
+	}
+}
 
 
 LRESULT CinchGrid::OnLButtonUp(WPARAM wParam, LPARAM lParam){
@@ -762,6 +806,41 @@ LRESULT CinchGrid::OnHScroll(WPARAM wParam, LPARAM lParam){
 	return 0;
 }
 
+void CinchGrid::PageDown(){
+	RECT client;
+	GetClientRect(hWnd, &client);
+	int lastY = scrollOffsetY;
+	
+	scrollOffsetY += client.bottom;
+	if( scrollOffsetY > totalHeight - client.bottom ){
+		scrollOffsetY = totalHeight - client.bottom;
+		scrollEditors(0, scrollOffsetY - lastY);
+	} else {
+		scrollEditors(0, client.bottom);				
+	}
+	SetScrollPos(hWnd, SB_VERT, scrollOffsetY, true);
+	AdjustWindow();
+	InvalidateRect(hWnd, NULL, true);
+}
+
+void CinchGrid::PageUp(){
+	RECT client;
+	GetClientRect(hWnd, &client);
+	int lastY = scrollOffsetY;
+	
+	scrollOffsetY -= client.bottom;
+	if( scrollOffsetY < 0 ) {
+		scrollOffsetY = 0;
+		scrollEditors(0, scrollOffsetY - lastY);
+
+	} else {
+		scrollEditors(0, 0 - client.bottom);
+	}
+	SetScrollPos(hWnd, SB_VERT, scrollOffsetY, true);
+	AdjustWindow();
+	InvalidateRect(hWnd, NULL, true);
+}
+
 LRESULT CinchGrid::OnVScroll(WPARAM wParam, LPARAM lParam){
 	int ypos = HIWORD(wParam);
 	int cmd = LOWORD(wParam); 
@@ -776,28 +855,9 @@ LRESULT CinchGrid::OnVScroll(WPARAM wParam, LPARAM lParam){
 		AdjustWindow();
 		InvalidateRect(hWnd, NULL, true);
 	} else if ( cmd == SB_PAGEDOWN ){
-		scrollOffsetY += client.bottom;
-		if( scrollOffsetY > totalHeight - client.bottom ){
-			scrollOffsetY = totalHeight - client.bottom;
-			scrollEditors(0, scrollOffsetY - lastY);
-		} else {
-			scrollEditors(0, client.bottom);				
-		}
-		SetScrollPos(hWnd, SB_VERT, scrollOffsetY, true);
-		AdjustWindow();
-		InvalidateRect(hWnd, NULL, true);
+		PageDown();
 	} else if ( cmd == SB_PAGEUP ){
-		scrollOffsetY -= client.bottom;
-		if( scrollOffsetY < 0 ) {
-			scrollOffsetY = 0;
-			scrollEditors(0, scrollOffsetY - lastY);
-
-		} else {
-			scrollEditors(0, 0 - client.bottom);
-		}
-		SetScrollPos(hWnd, SB_VERT, scrollOffsetY, true);
-		AdjustWindow();
-		InvalidateRect(hWnd, NULL, true);
+		PageUp();
 	} else if ( cmd == SB_LINEDOWN ){
 		scrollOffsetY += delegate->rowHeight();
 		if( scrollOffsetY > totalHeight - client.bottom ){
