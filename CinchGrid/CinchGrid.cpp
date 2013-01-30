@@ -474,11 +474,30 @@ void CinchGrid::DrawCellText(HDC hdc, RECT client)
 
 LRESULT CinchGrid::OnKeyDown(WPARAM wParam, LPARAM lParam){
 	
-	if ( activeRow > -1 ){
-		SetActiveRow(activeRow+1);
-	}
+	//if ( activeRow > -1 ){
+	//	SetActiveRow(activeRow+1);
+	//}
+	SetFocus(hWnd);
 	return MA_ACTIVATEANDEAT;
 }
+
+LRESULT CinchGrid::OnKeyUp(WPARAM wParam, LPARAM lParam){
+	
+	if ( activeRow > -1 ){
+		switch(wParam){
+		case VK_UP:
+			SetActiveRow(activeRow-1);
+			break;
+		case VK_DOWN:
+			SetActiveRow(activeRow+1);
+			break;
+		}
+	}
+	SetFocus(hWnd);
+	return MA_ACTIVATEANDEAT;
+}
+
+
 
 LRESULT CinchGrid::OnLButtonUp(WPARAM wParam, LPARAM lParam){
 	if ( draggingHeader == true ){
@@ -845,6 +864,8 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 	case WM_MOUSEACTIVATE:
 		SetFocus(hWnd);
 		return MA_ACTIVATE;
+	case WM_KEYUP:
+		return grid->OnKeyUp(wParam, lParam);
 	case WM_KEYDOWN:
 		return grid->OnKeyDown(wParam, lParam);
 	case WM_MOUSEMOVE:
