@@ -159,7 +159,7 @@ void ReferenceDelegate::editingFinished(HWND editor, int row, int col)
 }
 
 bool ReferenceDelegate::allowNewRows() {
-	return true;
+	return false;
 }
 
 bool ReferenceDelegate::allowNewColumns() {

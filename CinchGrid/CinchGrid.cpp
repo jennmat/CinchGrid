@@ -474,25 +474,27 @@ void CinchGrid::DrawCellText(HDC hdc, RECT client)
 
 LRESULT CinchGrid::OnKeyDown(WPARAM wParam, LPARAM lParam){
 	
-	//if ( activeRow > -1 ){
-	//	SetActiveRow(activeRow+1);
-	//}
+	if ( activeRow > -1 ){
+		switch(wParam){
+		case VK_UP:
+			if( activeRow - 1 > 0 ){
+				SetActiveRow(activeRow-1);
+			}
+			break;
+		case VK_DOWN:
+			if ( activeRow + 1 <= delegate->totalRows() ){
+				SetActiveRow(activeRow+1);
+			}
+			break;
+		}
+	}
 	SetFocus(hWnd);
 	return MA_ACTIVATEANDEAT;
 }
 
 LRESULT CinchGrid::OnKeyUp(WPARAM wParam, LPARAM lParam){
 	
-	if ( activeRow > -1 ){
-		switch(wParam){
-		case VK_UP:
-			SetActiveRow(activeRow-1);
-			break;
-		case VK_DOWN:
-			SetActiveRow(activeRow+1);
-			break;
-		}
-	}
+	
 	SetFocus(hWnd);
 	return MA_ACTIVATEANDEAT;
 }
@@ -582,7 +584,7 @@ LRESULT CinchGrid::OnLButtonDown(WPARAM wParam, LPARAM lParam){
 		//To account for the header space.
 		clickedRow++;
 
-		if ( clickedRow < delegate->totalRows() ){
+		if ( clickedRow <= delegate->totalRows() ){
 
 			SetActiveRow(clickedRow);
 
@@ -860,14 +862,17 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		return TRUE;
 	case WM_ERASEBKGND:
 		return 1;
-	
+	case WM_GETDLGCODE:
+		return DLGC_WANTARROWS;
 	case WM_MOUSEACTIVATE:
 		SetFocus(hWnd);
 		return MA_ACTIVATE;
-	case WM_KEYUP:
-		return grid->OnKeyUp(wParam, lParam);
+	case WM_SETFOCUS:
+		return 1;
 	case WM_KEYDOWN:
 		return grid->OnKeyDown(wParam, lParam);
+	case WM_KEYUP:
+		return grid->OnKeyUp(wParam, lParam);
 	case WM_MOUSEMOVE:
 		return grid->OnMouseMove(wParam, lParam);
 	case WM_PAINT:
