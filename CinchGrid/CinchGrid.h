@@ -121,9 +121,11 @@ public:
 	GridDelegate* getDelegate();
 	void reloadData();
 	int GetActiveRow();
+	void SetActiveRow(int row);
 
 	CinchGrid(HWND hWnd, HINSTANCE hInst, GridDelegate * delegate);
 
 	static HWND CreateCinchGrid(HWND parent, GridDelegate * delegate);
 };
+
 

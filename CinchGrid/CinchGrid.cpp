@@ -335,14 +335,14 @@ void CinchGrid::DrawVerticalGridlines(HDC hdc, RECT client)
 	
 	if ( delegate->drawVerticalGridlines() ){
 		int left = 0;
-		int bottom = client.bottom;
+		int bottom = offscreenHeight;
 		if ( !delegate->allowNewRows() ){
 			bottom = totalArea.bottom;
 		}
 		for(int i=0; i<numColumns; i++){
 			GridColumn* col = columns[i];
-			MoveToEx(hdc, left + col->getWidth()-1, windowOffsetY, NULL);
-			LineTo(hdc, left + col->getWidth()-1, bottom );
+			MoveToEx(hdc, left + col->getWidth()-1, client.top, NULL);
+			LineTo(hdc, left + col->getWidth()-1, bottom + windowOffsetY );
 			left += col->getWidth();
 		}
 		if ( delegate->allowNewColumns() ){
@@ -473,7 +473,11 @@ void CinchGrid::DrawCellText(HDC hdc, RECT client)
 }
 
 LRESULT CinchGrid::OnKeyDown(WPARAM wParam, LPARAM lParam){
-	return 0;
+	
+	if ( activeRow > -1 ){
+		SetActiveRow(activeRow+1);
+	}
+	return MA_ACTIVATEANDEAT;
 }
 
 LRESULT CinchGrid::OnLButtonUp(WPARAM wParam, LPARAM lParam){
@@ -556,49 +560,14 @@ LRESULT CinchGrid::OnLButtonDown(WPARAM wParam, LPARAM lParam){
 			totalHeight = (delegate->totalRows() + 1) * delegate->rowHeight();
 		}
 
+		//To account for the header space.
+		clickedRow++;
+
 		if ( clickedRow < delegate->totalRows() ){
-			int previousActiveRow = activeRow;
-			activeRow = (yPos + scrollOffsetY) / delegate->rowHeight();
-				
-			RECT client;
-			GetClientRect(hWnd, &client);
-	
-			if( delegate->rowSelection() ){
-	
-				
-				RECT r2;
-				r2.left = 0;
-				r2.right = client.right;
-				r2.top = previousActiveRow * delegate->rowHeight() - 2;
-				r2.bottom = repaint.top + delegate->rowHeight() + 4;
-				//InvalidateRect(hWnd, NULL, true);
 
-				repaint.left = 0;
-				repaint.right = client.right;
-				repaint.top = activeRow * delegate->rowHeight() - 2;
-				repaint.bottom = repaint.top + delegate->rowHeight() + 4;
-				//InvalidateRect(hWnd, &repaint, true);
-				SetupWindowOffset();
-				if (previousActiveRow > 0 ){
-					ClearActiveRow(previousActiveRow, offscreenDC, client);
-				}
-				DrawActiveRow(offscreenDC, client);
-				ClearWindowOffset();
-				//InvalidateRect(hWnd, &repaint, true);
-				//InvalidateRect(hWnd, &r2, true);
-				InvalidateRect(hWnd, NULL, true);
-				
-				PostMessage(GetParent(hWnd), CINCHGRID_ROW_SELECTED, 0, 0);
-			}
+			SetActiveRow(clickedRow);
 
-			startEditing(previousActiveRow-1, activeRow-1, activeCol);
-
-			if( previousActiveRow != -1 ){
-				SetupWindowOffset();
-				DrawTextForRow(offscreenDC, client, previousActiveRow-1); 
-				ClearWindowOffset();
-				InvalidateRect(hWnd, NULL, true);
-			}
+			
 		}
 	}
 
@@ -1245,6 +1214,37 @@ void CinchGrid::DrawGridElements(HDC hdc, RECT client)
 
 int CinchGrid::GetActiveRow(){
 	return activeRow - 1;
+}
+
+void CinchGrid::SetActiveRow(int row){
+	int previousActiveRow = activeRow;
+	activeRow = row;
+
+	RECT client;
+	GetClientRect(hWnd, &client);
+	
+	if( delegate->rowSelection() ){
+	
+		SetupWindowOffset();
+		if (previousActiveRow > 0 ){
+			ClearActiveRow(previousActiveRow, offscreenDC, client);
+		}
+		DrawActiveRow(offscreenDC, client);
+		ClearWindowOffset();
+		InvalidateRect(hWnd, NULL, true);
+				
+		PostMessage(GetParent(hWnd), CINCHGRID_ROW_SELECTED, 0, 0);
+	}
+
+	startEditing(previousActiveRow-1, activeRow-1, activeCol);
+
+	if( previousActiveRow != -1 ){
+		SetupWindowOffset();
+		DrawTextForRow(offscreenDC, client, previousActiveRow-1); 
+		ClearWindowOffset();
+		InvalidateRect(hWnd, NULL, true);
+	}
+
 }
 
 void CinchGrid::setDelegate(GridDelegate* d){
