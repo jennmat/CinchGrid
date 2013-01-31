@@ -73,3 +73,42 @@ public:
 	HFONT getFont();
 	HFONT getEditFont();
 };
+
+
+class ReferenceEditableDelegate : public GridDelegate {
+private:
+	int rowCount;
+	int columnCount;
+	wchar_t* data[MAX_ROWS][MAX_COLUMNS];
+public:
+	ReferenceEditableDelegate();
+	int totalRows();
+	int totalColumns();
+
+	int columnWidth(int column);
+	int rowHeight();
+
+	wchar_t* headerContent(int);
+	const wchar_t* cellContent(int, int);
+
+	bool stickyHeaders();
+	
+	bool rowSelection();
+
+	bool drawHorizontalGridlines();
+	bool drawVerticalGridlines();
+
+	bool allowEditing(int);
+	bool allowHeaderTitleEditing(int);
+	void setupEditorForCell(HWND editor, int row, int col);
+	HWND editorForColumn(int, HWND parent, HINSTANCE hInst) ;
+	void editingFinished(HWND editor, int row, int col);
+	void willLoseFocus();
+
+	bool allowNewRows();
+	bool allowNewColumns();
+	void prepareNewRow(int row);
+
+	HFONT getFont();
+	HFONT getEditFont();
+};

@@ -569,7 +569,7 @@ LRESULT CinchGrid::OnLButtonUp(WPARAM wParam, LPARAM lParam){
 		InvalidateRect(hWnd, NULL, true);
 	}
 
-	return 0;
+	return MA_ACTIVATE;
 }
 
 LRESULT CinchGrid::OnLButtonDown(WPARAM wParam, LPARAM lParam){
@@ -636,8 +636,10 @@ LRESULT CinchGrid::OnLButtonDown(WPARAM wParam, LPARAM lParam){
 		}
 	}
 
-	SetFocus(hWnd);
-	return MA_ACTIVATEANDEAT;
+	if ( !delegate->allowEditing(activeCol)){
+		SetFocus(hWnd);
+	}
+	return MA_ACTIVATE;
 }
 
 LRESULT CinchGrid::OnMouseMove(WPARAM wParam, LPARAM lParam){
@@ -929,6 +931,8 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		return MA_ACTIVATE;
 	case WM_SETFOCUS:
 		return 1;
+	case WM_KILLFOCUS:
+		return 0;
 	case WM_KEYDOWN:
 		return grid->OnKeyDown(wParam, lParam);
 	case WM_KEYUP:
@@ -1085,25 +1089,28 @@ LRESULT CALLBACK CinchGrid::DetailWndProc(HWND hWnd, UINT message, WPARAM wParam
 
 		}
 		break;
-
 	case WM_KILLFOCUS:
 		if ( uIdSubclass == HEADER_EDITOR ){
 			self->stopHeaderTitleEditing();
 		} else {
-			HWND dest = (HWND)wParam;
-			bool focusMovingToOtherCol = false;
-			for(int i=0; i<self->numColumns; i++){
-				if ( dest != NULL && dest == self->columns[i]->getEditor() ){
-					focusMovingToOtherCol = true;
+			/*HWND dest = (HWND)wParam;
+			bool focusMovingOutsideGrid = true;
+			HWND parent = GetParent(dest);
+			while ( parent != HWND_TOP ){
+				if ( parent == self->hWnd ) {
+					focusMovingOutsideGrid = false;
+					break;
 				}
+				parent = GetParent(parent);
 			}
-			if ( !focusMovingToOtherCol ) {
+			
+			if ( focusMovingOutsideGrid ) {
 				self->stopEditing();
 			}
 			self->delegate->editingFinished(hWnd, self->activeRow-1, uIdSubclass);
-			if( !focusMovingToOtherCol ) {
+			if( focusMovingOutsideGrid ) {
 				self->delegate->willLoseFocus();
-			}
+			}*/
 		}
 		break;
 	case WM_SETFOCUS:
