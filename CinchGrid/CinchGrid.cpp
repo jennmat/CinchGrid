@@ -125,6 +125,7 @@ void CinchGrid::initialize(){
 }
 
 void CinchGrid::reloadData(){
+	stopEditing();
 	activeRow = -1;
 	SetupAndDrawOffscreenBitmap();
 	InvalidateRect(hWnd, NULL, true);

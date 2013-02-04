@@ -164,7 +164,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	switch (message)
 	{
 	case CINCHGRID_ROW_SELECTED:
-		OutputDebugStringW(TEXT("Row selected"));
 		break;
 
 	case WM_COMMAND:
@@ -183,10 +182,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			return DefWindowProc(hWnd, message, wParam, lParam);
 		}
 		break;
+	case WM_ERASEBKGND:
+		return 1;
 	case WM_SIZE:
 		RECT client;
 		GetClientRect(hWnd, &client);
-		//SetWindowPos(gridWindow, HWND_TOP, client.left, client.top, client.right, client.bottom, 0);
+		SetWindowPos(gridWindow, HWND_TOP, client.left, client.top, client.right-50, client.bottom, 0);
 		break;
 	case WM_PAINT:
 		{
