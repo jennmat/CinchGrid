@@ -31,6 +31,7 @@ private:
 	HWND headerEditor;
 
 	int activeRow;// = -1;
+	int activelyEditingRow;
 	int activeCol;// = -1;
 
 	int scrollOffsetX;// = 0;

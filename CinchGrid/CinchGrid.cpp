@@ -58,6 +58,7 @@ CinchGrid::CinchGrid(HWND h, HINSTANCE inst, GridDelegate * d){
 	hWnd = h;
 	hInst = inst;
 	activeRow = -1;
+	activelyEditingRow = -1;
 	activeCol = -1;
 
 	editingHeader = -1;
@@ -125,7 +126,18 @@ void CinchGrid::initialize(){
 }
 
 void CinchGrid::reloadData(){
-	stopEditing();
+	//stopEditing();
+	if (editingInitialized == true ){
+		for(int i=0; i<numColumns; i++){
+			if( delegate->allowEditing(i) ){
+				if ( columns[i]->getEditor() != NULL ){
+					delegate->setupEditorForCell(columns[i]->getEditor(), activelyEditingRow, i);
+				}
+			}
+		}
+	}
+	
+
 	activeRow = -1;
 	SetupAndDrawOffscreenBitmap();
 	InvalidateRect(hWnd, NULL, true);
@@ -1094,8 +1106,9 @@ LRESULT CALLBACK CinchGrid::DetailWndProc(HWND hWnd, UINT message, WPARAM wParam
 		if ( uIdSubclass == HEADER_EDITOR ){
 			self->stopHeaderTitleEditing();
 		} else {
-			self->delegate->editingFinished(hWnd, self->activeRow-1, uIdSubclass);
+			self->delegate->editingFinished(hWnd, self->activelyEditingRow, uIdSubclass);
 			self->delegate->willLoseFocus();
+			
 			/*HWND dest = (HWND)wParam;
 			bool focusMovingOutsideGrid = true;
 			HWND parent = GetParent(dest);
@@ -1266,7 +1279,7 @@ void CinchGrid::startEditing(int previous, int row, int col){
 	
 	SendMessage(GetFocus(), EM_SETSEL, 0, -1);
 	
-		
+	activelyEditingRow = row;
 	editingInitialized = true;
 }
 
