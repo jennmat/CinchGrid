@@ -1094,6 +1094,8 @@ LRESULT CALLBACK CinchGrid::DetailWndProc(HWND hWnd, UINT message, WPARAM wParam
 		if ( uIdSubclass == HEADER_EDITOR ){
 			self->stopHeaderTitleEditing();
 		} else {
+			self->delegate->editingFinished(hWnd, self->activeRow-1, uIdSubclass);
+			self->delegate->willLoseFocus();
 			/*HWND dest = (HWND)wParam;
 			bool focusMovingOutsideGrid = true;
 			HWND parent = GetParent(dest);
