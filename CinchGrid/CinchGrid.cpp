@@ -379,7 +379,7 @@ void CinchGrid::DrawHorizontalGridlines(HDC hdc, RECT client)
 		int i = windowOffsetY / client.bottom;
 		int bottom = offscreenHeight;
 		if (  delegate->allowNewRows() == false ){
-			bottom = client.bottom+1;
+			bottom = bottom+1;
 		}
 		int width = totalWidth;
 		if( delegate->allowNewColumns() ){
@@ -426,7 +426,7 @@ void CinchGrid::ClearActiveRow(int row, HDC hdc, RECT client)
 	RECT rect;
 	rect.left = 0;
 	rect.right = totalWidth;
-	rect.top = row * delegate->rowHeight();
+	rect.top = (row) * delegate->rowHeight();
 	rect.bottom = rect.top + delegate->rowHeight();
 	FillRect(hdc, &rect, solidWhiteBrush);
 	//Gridlines

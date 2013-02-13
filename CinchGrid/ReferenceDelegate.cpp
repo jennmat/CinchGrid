@@ -4,7 +4,7 @@
 
 ReferenceDelegate::ReferenceDelegate(){
 	int i,j;
-	rowCount = 20;
+	rowCount = 200;
 	columnCount = 15;
 
 	for(i=0;i<MAX_ROWS;i++){
@@ -51,7 +51,7 @@ const wchar_t* ReferenceDelegate::cellContent(int row, int col) {
 	
 	//if ( col == 0 ){
 		wchar_t* buffer = (wchar_t*)malloc(20*sizeof(wchar_t));
-		_itow_s(row, buffer, 20, 10);
+		_itow_s(row*col, buffer, 20, 10);
 
 		return buffer;
 //	}

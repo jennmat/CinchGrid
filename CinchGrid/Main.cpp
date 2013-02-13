@@ -137,7 +137,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	
 	gridWindow = CinchGrid::CreateCinchGrid(hWnd, new ReferenceDelegate());
 	//gridWindow = CinchGrid::CreateCinchGrid(hWnd, new ReferenceEditableDelegate());
-	SetWindowPos(gridWindow, HWND_TOP, 0, 0, client.right-100, client.bottom, 0);
+	SetWindowPos(gridWindow, HWND_TOP, 0, 0, client.right, client.bottom, 0);
 	ShowWindow(gridWindow, nCmdShow);
 
 	//HWND edit = CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", L"", WS_CHILD | WS_VISIBLE, client.right-50, 10, 50, 35, hWnd, NULL, hInstance, NULL);
@@ -185,7 +185,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_SIZE:
 		RECT client;
 		GetClientRect(hWnd, &client);
-		SetWindowPos(gridWindow, HWND_TOP, client.left, client.top, client.right-100, client.bottom, 0);
+		SetWindowPos(gridWindow, HWND_TOP, client.left, client.top, client.right, client.bottom, 0);
 		break;
 	case WM_PAINT:
 		{
