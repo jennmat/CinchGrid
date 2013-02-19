@@ -29,6 +29,8 @@ public:
 	virtual bool allowNewColumns() = 0;
 	virtual void prepareNewRow(int row) = 0;
 
+	virtual void headerContextClick() = 0;
+
 	virtual HFONT getFont()=0;
 	virtual HFONT getEditFont() = 0;
 };
@@ -70,6 +72,8 @@ public:
 	bool allowNewColumns();
 	void prepareNewRow(int row);
 
+	void headerContextClick();
+
 	HFONT getFont();
 	HFONT getEditFont();
 };
@@ -108,6 +112,8 @@ public:
 	bool allowNewRows();
 	bool allowNewColumns();
 	void prepareNewRow(int row);
+
+	void headerContextClick();
 
 	HFONT getFont();
 	HFONT getEditFont();

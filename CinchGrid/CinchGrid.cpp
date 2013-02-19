@@ -558,6 +558,20 @@ void CinchGrid::ScrollRowIntoView(int row){
 }
 
 
+LRESULT CinchGrid::OnRButtonUp(WPARAM wParam, LPARAM lParam){
+	int mouseXPos = GET_X_LPARAM(lParam); 
+	int mouseYPos = GET_Y_LPARAM(lParam);
+
+	if ( delegate->stickyHeaders() && mouseYPos < delegate->rowHeight() ){
+		delegate->headerContextClick();
+	}
+	if ( !delegate->stickyHeaders() && mouseYPos + scrollOffsetY < delegate->rowHeight() ){
+		delegate->headerContextClick();
+	}
+
+	return MA_ACTIVATE;
+}
+
 LRESULT CinchGrid::OnLButtonUp(WPARAM wParam, LPARAM lParam){
 	if ( draggingHeader == true ){
 		int accum = 0;
@@ -958,6 +972,8 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		return grid->OnLButtonDown(wParam, lParam);
 	case WM_LBUTTONUP:
 		return grid->OnLButtonUp(wParam, lParam);
+	case WM_RBUTTONUP:
+		return grid->OnRButtonUp(wParam, lParam);
 	case WM_SIZE:
 		return grid->OnSize(wParam, lParam);
 	case WM_MOUSEWHEEL:

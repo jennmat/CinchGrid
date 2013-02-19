@@ -177,3 +177,6 @@ void ReferenceDelegate::setupEditorForCell(HWND editor, int row, int col){
 	SendMessage(editor, WM_SETTEXT, (WPARAM)0, (LPARAM)this->cellContent(row, col));
 }
 
+void ReferenceDelegate::headerContextClick(){
+	MessageBox(NULL, L"Header right click", L"Cinch Grid", MB_OK);
+}

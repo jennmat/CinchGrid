@@ -115,6 +115,7 @@ private:
 	LRESULT OnSize(WPARAM wParam, LPARAM lParam);
 	LRESULT OnLButtonDown(WPARAM wParam, LPARAM lParam);
 	LRESULT OnLButtonUp(WPARAM wParam, LPARAM lParam);
+	LRESULT OnRButtonUp(WPARAM wParam, LPARAM lParam);
 	LRESULT OnVScroll(WPARAM wParam, LPARAM lParam);
 	LRESULT OnHScroll(WPARAM wParam, LPARAM lParam);
 	LRESULT OnMouseWheel(WPARAM wParam, LPARAM lParam);
