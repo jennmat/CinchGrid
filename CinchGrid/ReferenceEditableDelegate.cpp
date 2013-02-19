@@ -133,7 +133,7 @@ void ReferenceEditableDelegate::setupEditorForCell(HWND editor, int row, int col
 	SendMessage(editor, WM_SETTEXT, (WPARAM)0, (LPARAM)this->cellContent(row, col));
 }
 
-void ReferenceEditableDelegate::headerContextClick(){
+void ReferenceEditableDelegate::headerContextClick(HWND hwnd, int x, int y){
 
 }
 

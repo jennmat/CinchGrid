@@ -29,7 +29,7 @@ public:
 	virtual bool allowNewColumns() = 0;
 	virtual void prepareNewRow(int row) = 0;
 
-	virtual void headerContextClick() = 0;
+	virtual void headerContextClick(HWND hwnd, int x, int y) = 0;
 
 	virtual HFONT getFont()=0;
 	virtual HFONT getEditFont() = 0;
@@ -72,7 +72,7 @@ public:
 	bool allowNewColumns();
 	void prepareNewRow(int row);
 
-	void headerContextClick();
+	void headerContextClick(HWND grid, int x, int y);
 
 	HFONT getFont();
 	HFONT getEditFont();
@@ -113,7 +113,7 @@ public:
 	bool allowNewColumns();
 	void prepareNewRow(int row);
 
-	void headerContextClick();
+	void headerContextClick(HWND grid, int x, int y);
 
 	HFONT getFont();
 	HFONT getEditFont();

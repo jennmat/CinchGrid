@@ -563,10 +563,10 @@ LRESULT CinchGrid::OnRButtonUp(WPARAM wParam, LPARAM lParam){
 	int mouseYPos = GET_Y_LPARAM(lParam);
 
 	if ( delegate->stickyHeaders() && mouseYPos < delegate->rowHeight() ){
-		delegate->headerContextClick();
+		delegate->headerContextClick(hWnd, mouseXPos, mouseYPos);
 	}
 	if ( !delegate->stickyHeaders() && mouseYPos + scrollOffsetY < delegate->rowHeight() ){
-		delegate->headerContextClick();
+		delegate->headerContextClick(hWnd, mouseXPos, mouseYPos);
 	}
 
 	return MA_ACTIVATE;
