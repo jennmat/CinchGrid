@@ -93,6 +93,13 @@ CinchGrid::CinchGrid(HWND h, HINSTANCE inst, GridDelegate * d){
 }
 
 void CinchGrid::initialize(){
+
+	for(int i=0; i<numColumns; i++){
+		columns[i] = NULL;
+	}
+
+	numColumns = 0;
+
 	for(int i=0; i<delegate->totalColumns(); i++){
 		addColumn(delegate->headerContent(i), delegate->columnWidth(i));
 		totalWidth += delegate->columnWidth(i);
@@ -127,6 +134,7 @@ void CinchGrid::initialize(){
 
 void CinchGrid::reloadData(){
 	//stopEditing();
+	
 	if (editingInitialized == true ){
 		for(int i=0; i<numColumns; i++){
 			if( delegate->allowEditing(i) ){
@@ -139,6 +147,7 @@ void CinchGrid::reloadData(){
 	
 
 	activeRow = -1;
+	initialize();
 	SetupAndDrawOffscreenBitmap();
 	InvalidateRect(hWnd, NULL, true);
 }
