@@ -305,7 +305,7 @@ void DrawColumnHeader(HDC hdc, int x, int width, int height, LPWSTR text)
 	headerText.bottom = height;
 	headerText.right = x + width;
 
-	DrawText(hdc, text, -1, &headerText, DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS);
+	DrawText(hdc, text, -1, &headerText, DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS | DT_NOPREFIX);
 		
 }
 
@@ -426,7 +426,7 @@ void CinchGrid::DrawTextForRow(HDC hdc, RECT client, int row){
 		} else {
 			FillRect(hdc, &textRect, solidWhiteBrush); 
 		}
-		int rc = DrawText(hdc, delegate->cellContent(row, col), -1, &textRect, DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS);
+		int rc = DrawText(hdc, delegate->cellContent(row, col), -1, &textRect, DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS | DT_NOPREFIX);
 	}
 }
 
