@@ -960,10 +960,14 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 	switch (message)
 	{
 	case WM_NCCREATE:
+		{
 		c = (CREATESTRUCT*)lParam;
-		grid = new CinchGrid(hWnd, GetModuleHandle(0), (GridDelegate *)c->lpCreateParams);
+		GridDelegate* d = (GridDelegate *)c->lpCreateParams;
+		grid = new CinchGrid(hWnd, GetModuleHandle(0), d);
+		d->setGrid(grid);
 		SetWindowLong(hWnd, GWL_USERDATA, (LONG)grid);
 		return TRUE;
+		}
 	case WM_ERASEBKGND:
 		return 1;
 	case WM_GETDLGCODE:
