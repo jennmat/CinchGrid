@@ -186,3 +186,6 @@ void ReferenceDelegate::willReloadData(){
 
 void ReferenceDelegate::didReloadData(){
 }
+
+void ReferenceDelegate::didSelectRow(int row){
+}

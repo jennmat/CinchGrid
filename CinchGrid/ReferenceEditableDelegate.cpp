@@ -142,3 +142,6 @@ void ReferenceEditableDelegate::willReloadData(){
 
 void ReferenceEditableDelegate::didReloadData(){
 }
+
+void ReferenceEditableDelegate::didSelectRow(int row){
+}

@@ -1374,6 +1374,8 @@ void CinchGrid::SetActiveRow(int row){
 		InvalidateRect(hWnd, NULL, true);
 				
 		PostMessage(GetParent(hWnd), CINCHGRID_ROW_SELECTED, 0, 0);
+
+		delegate->didSelectRow(GetActiveRow());
 	}
 
 	startEditing(previousActiveRow-1, activeRow-1, activeCol);
