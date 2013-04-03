@@ -189,3 +189,6 @@ void ReferenceDelegate::didReloadData(){
 
 void ReferenceDelegate::didSelectRow(int row){
 }
+
+void ReferenceDelegate::setGrid(CinchGrid* grid){
+}

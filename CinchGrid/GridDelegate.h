@@ -1,4 +1,7 @@
 
+#include "stdafx.h"
+
+class CinchGrid;
 
 class GridDelegate
 {
@@ -38,6 +41,8 @@ public:
 
 	virtual HFONT getFont()=0;
 	virtual HFONT getEditFont() = 0;
+
+	virtual void setGrid(CinchGrid* grid) = 0;
 };
 
 #define MAX_ROWS 4000
@@ -86,6 +91,8 @@ public:
 
 	HFONT getFont();
 	HFONT getEditFont();
+
+	void setGrid(CinchGrid* grid);
 };
 
 
@@ -132,4 +139,6 @@ public:
 
 	HFONT getFont();
 	HFONT getEditFont();
+
+	void setGrid(CinchGrid* grid);
 };

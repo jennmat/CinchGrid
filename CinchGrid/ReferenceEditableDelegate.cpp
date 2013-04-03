@@ -145,3 +145,6 @@ void ReferenceEditableDelegate::didReloadData(){
 
 void ReferenceEditableDelegate::didSelectRow(int row){
 }
+
+void ReferenceEditableDelegate::setGrid(CinchGrid* grid){
+}
