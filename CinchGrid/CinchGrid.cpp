@@ -134,6 +134,8 @@ void CinchGrid::initialize(){
 
 void CinchGrid::reloadData(){
 	//stopEditing();
+
+	delegate->willReloadData();
 	
 	if (editingInitialized == true ){
 		for(int i=0; i<numColumns; i++){
@@ -148,8 +150,12 @@ void CinchGrid::reloadData(){
 
 	activeRow = -1;
 	initialize();
+
+	delegate->didReloadData();
+
 	SetupAndDrawOffscreenBitmap();
 	InvalidateRect(hWnd, NULL, true);
+
 }
 
 void CinchGrid::clearColumns(){

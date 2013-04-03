@@ -18,6 +18,9 @@ public:
 	
 	virtual bool rowSelection() = 0;
 
+	virtual void willReloadData() = 0;
+	virtual void didReloadData() = 0;
+
 	virtual void setupEditorForCell(HWND editor, int row, int col) = 0;
 	virtual bool allowEditing(int col) = 0;
 	virtual bool allowHeaderTitleEditing(int col)=0;
@@ -61,6 +64,9 @@ public:
 	bool drawHorizontalGridlines();
 	bool drawVerticalGridlines();
 
+	void willReloadData();
+	void didReloadData();
+
 	bool allowEditing(int);
 	bool allowHeaderTitleEditing(int);
 	void setupEditorForCell(HWND editor, int row, int col);
@@ -98,6 +104,9 @@ public:
 	bool stickyHeaders();
 	
 	bool rowSelection();
+
+	void willReloadData();
+	void didReloadData();
 
 	bool drawHorizontalGridlines();
 	bool drawVerticalGridlines();

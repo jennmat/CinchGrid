@@ -137,3 +137,8 @@ void ReferenceEditableDelegate::headerContextClick(HWND hwnd, int x, int y){
 
 }
 
+void ReferenceEditableDelegate::willReloadData(){
+}
+
+void ReferenceEditableDelegate::didReloadData(){
+}
