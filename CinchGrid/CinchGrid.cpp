@@ -225,7 +225,7 @@ void CinchGrid::AdjustWindow(){
 	//windowheight
 
 	RECT client;
-	GetWindowRect(hWnd, &client);
+	GetClientRect(hWnd, &client);
 
 	if ( scrollOffsetY + client.bottom > windowOffsetY + offscreenHeight ){
 		windowOffsetY =  max(0, scrollOffsetY - ((offscreenHeight - client.bottom) / 2));
