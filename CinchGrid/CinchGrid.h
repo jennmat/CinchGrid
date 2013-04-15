@@ -88,8 +88,6 @@ private:
 	void adjustEditors();
 	void SetScroll(HWND hWnd);
 
-	void ScrollRowIntoView(int row);
-
 	void PageDown();
 	void PageUp();
 
@@ -129,6 +127,7 @@ public:
 	void reloadData();
 	int GetActiveRow();
 	void SetActiveRow(int row);
+	void ScrollRowIntoView(int row);
 
 	CinchGrid(HWND hWnd, HINSTANCE hInst, GridDelegate * delegate);
 
