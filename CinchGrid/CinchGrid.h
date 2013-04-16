@@ -126,7 +126,7 @@ public:
 	GridDelegate* getDelegate();
 	void reloadData();
 	int GetActiveRow();
-	void SetActiveRow(int row);
+	void SetActiveRow(int row, bool silent=false);
 	void ScrollRowIntoView(int row);
 
 	CinchGrid(HWND hWnd, HINSTANCE hInst, GridDelegate * delegate);

@@ -1360,7 +1360,7 @@ int CinchGrid::GetActiveRow(){
 	return activeRow - 1;
 }
 
-void CinchGrid::SetActiveRow(int row){
+void CinchGrid::SetActiveRow(int row, bool silent){
 	int previousActiveRow = activeRow;
 	activeRow = row;
 
@@ -1377,7 +1377,9 @@ void CinchGrid::SetActiveRow(int row){
 		ClearWindowOffset();
 		InvalidateRect(hWnd, NULL, true);
 				
-		PostMessage(GetParent(hWnd), CINCHGRID_ROW_SELECTED, 0, 0);
+		if ( !silent ){
+			PostMessage(GetParent(hWnd), CINCHGRID_ROW_SELECTED, 0, 0);
+		}
 
 		delegate->didSelectRow(GetActiveRow());
 	}
