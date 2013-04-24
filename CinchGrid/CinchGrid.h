@@ -91,6 +91,8 @@ private:
 	void PageDown();
 	void PageUp();
 
+	void ScrollRowIntoViewFromBeneath(int row);
+
 	/* Painting */
 	void AdjustWindow();
 	void SetupWindowOffset();

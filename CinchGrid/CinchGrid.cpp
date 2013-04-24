@@ -511,7 +511,7 @@ LRESULT CinchGrid::OnKeyDown(WPARAM wParam, LPARAM lParam){
 		case VK_UP:
 			if( activeRow - 1 > 0 ){
 				SetActiveRow(activeRow-1);
-				ScrollRowIntoView(activeRow+1);
+				ScrollRowIntoViewFromBeneath(activeRow+1);
 			}
 			break;
 		case VK_DOWN:
@@ -534,7 +534,7 @@ LRESULT CinchGrid::OnKeyDown(WPARAM wParam, LPARAM lParam){
 			} else {
 				SetActiveRow(activeRow - pageSize);
 			}
-			ScrollRowIntoView(activeRow);	
+			ScrollRowIntoViewFromBeneath(activeRow);	
 			break;
 		}
 
@@ -552,19 +552,40 @@ LRESULT CinchGrid::OnKeyUp(WPARAM wParam, LPARAM lParam){
 }
 
 
-void CinchGrid::ScrollRowIntoView(int row){
+void CinchGrid::ScrollRowIntoViewFromBeneath(int row){
 	RECT client;
 	GetClientRect(hWnd, &client);
 	int windowPos = row * delegate->rowHeight() - windowOffsetY;
-	bool offScreen = windowPos > (client.bottom * 3 / 4);
+	bool offScreen = (windowPos < (scrollOffsetY-delegate->rowHeight()+100) );
 	if  (offScreen ) {
-		scrollOffsetY = row * delegate->rowHeight() - ( client.bottom * 3 / 4 );
+		scrollOffsetY = (row * delegate->rowHeight()) - ( delegate->rowHeight() * 3 );
 		if ( scrollOffsetY < 0 ) scrollOffsetY = 0 ;
 		SetScrollPos(hWnd, SB_VERT, scrollOffsetY, true);
 		AdjustWindow();
 		InvalidateRect(hWnd, NULL, true);
 	}
-	if ( windowPos < 0 ){
+	if ( windowPos < delegate->rowHeight() ){
+		scrollOffsetY = 0;
+		SetScrollPos(hWnd, SB_VERT, scrollOffsetY, true);
+		AdjustWindow();
+		InvalidateRect(hWnd, NULL, true);
+	}
+}
+
+
+void CinchGrid::ScrollRowIntoView(int row){
+	RECT client;
+	GetClientRect(hWnd, &client);
+	int windowPos = row * delegate->rowHeight() - windowOffsetY;
+	bool offScreen = ( windowPos > (client.bottom - delegate->rowHeight()) ) || (windowPos < scrollOffsetY );
+	if  (offScreen ) {
+		scrollOffsetY = row * delegate->rowHeight() - ( client.bottom - delegate->rowHeight());
+		if ( scrollOffsetY < 0 ) scrollOffsetY = 0 ;
+		SetScrollPos(hWnd, SB_VERT, scrollOffsetY, true);
+		AdjustWindow();
+		InvalidateRect(hWnd, NULL, true);
+	}
+	if ( windowPos < delegate->rowHeight() ){
 		scrollOffsetY = 0;
 		SetScrollPos(hWnd, SB_VERT, scrollOffsetY, true);
 		AdjustWindow();

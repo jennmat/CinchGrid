@@ -40,7 +40,7 @@ wchar_t* ReferenceDelegate::headerContent(int col) {
 }
 
 bool ReferenceDelegate::stickyHeaders(){
-	return true;
+	return false;
 }
 
 const wchar_t* ReferenceDelegate::cellContent(int row, int col) {
