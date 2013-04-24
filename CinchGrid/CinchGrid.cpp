@@ -151,6 +151,8 @@ void CinchGrid::reloadData(){
 	activeRow = -1;
 	initialize();
 
+	SetScroll(hWnd);
+
 	delegate->didReloadData();
 
 	SetupAndDrawOffscreenBitmap();
