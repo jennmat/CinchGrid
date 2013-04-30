@@ -87,7 +87,7 @@ CinchGrid::CinchGrid(HWND h, HINSTANCE inst, GridDelegate * d){
 	headerPen = CreatePen(PS_SOLID, 1, RGB(137, 140, 149));
 	gridlinesPen = CreatePen(PS_SOLID, 1, RGB(210, 210, 210));
 	solidWhiteBrush = CreateSolidBrush(RGB(255,255,255));
-	activeRowBrush = CreateSolidBrush(RGB(222,235,250));
+	activeRowBrush = CreateSolidBrush(RGB(167,205,240));
 		
 	offscreenDC = CreateCompatibleDC(GetDC(hWnd));
 }
