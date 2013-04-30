@@ -99,6 +99,7 @@ void CinchGrid::initialize(){
 	}
 
 	numColumns = 0;
+	totalWidth = 0;
 
 	for(int i=0; i<delegate->totalColumns(); i++){
 		addColumn(delegate->headerContent(i), delegate->columnWidth(i));
