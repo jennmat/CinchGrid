@@ -180,12 +180,12 @@ void CinchGrid::SetScroll(HWND hWnd)
 	if( totalWidth > client.right ){
 		overflowX = true;
 	} else {
-		overflowX = overflowX || false;
+		overflowX = (overflowX && scrollOffsetX > 0) || false;
 	}
 	if ( totalHeight > client.bottom ){
 		overflowY = true;
 	} else {
-		overflowY = overflowY || false;
+		overflowY = (overflowY && scrollOffsetY > 0) || false;
 	}
 
 
@@ -196,30 +196,29 @@ void CinchGrid::SetScroll(HWND hWnd)
     si.nMin   = 0;
 	si.nMax   = (delegate->totalRows() * delegate->rowHeight()) + client.bottom;
 	si.nPage  = client.bottom;
-	SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
-
+	
 	SCROLLINFO hsi;
-	ZeroMemory(&si, sizeof(hsi));
-    hsi.cbSize = sizeof(si);
+	ZeroMemory(&hsi, sizeof(hsi));
+    hsi.cbSize = sizeof(hsi);
     hsi.fMask  = SIF_RANGE | SIF_PAGE;
     hsi.nMin   = 0;
 	hsi.nMax   = totalWidth;
 	hsi.nPage  = client.right;
-	SetScrollInfo(hWnd, SB_HORZ, &hsi, TRUE);
 
 	if ( overflowX){
+		SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
 		ShowScrollBar(hWnd, SB_HORZ, true);
 	} else {
 		ShowScrollBar(hWnd, SB_HORZ, false);
 	}
 	if ( overflowY ){
+		SetScrollInfo(hWnd, SB_HORZ, &hsi, TRUE);
 		ShowScrollBar(hWnd, SB_VERT, true);
 	} else {
 		ShowScrollBar(hWnd, SB_VERT, false);
 	}
 			
 }
-
 void CinchGrid::AdjustWindow(){
 
 	//totalHeight
