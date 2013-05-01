@@ -878,8 +878,8 @@ void CinchGrid::PageDown(){
 	int lastY = scrollOffsetY;
 	
 	scrollOffsetY += client.bottom;
-	if( scrollOffsetY > totalHeight - client.bottom ){
-		scrollOffsetY = totalHeight - client.bottom;
+	if( scrollOffsetY > totalHeight + client.bottom ){
+		scrollOffsetY = totalHeight + client.bottom;
 		scrollEditors(0, scrollOffsetY - lastY);
 	} else {
 		scrollEditors(0, client.bottom);				
@@ -926,8 +926,8 @@ LRESULT CinchGrid::OnVScroll(WPARAM wParam, LPARAM lParam){
 		PageUp();
 	} else if ( cmd == SB_LINEDOWN ){
 		scrollOffsetY += delegate->rowHeight();
-		if( scrollOffsetY > totalHeight - client.bottom ){
-			scrollOffsetY = totalHeight - client.bottom;
+		if( scrollOffsetY > totalHeight + client.bottom ){
+			scrollOffsetY = totalHeight + client.bottom;
 		} else {
 			scrollEditors(0, delegate->rowHeight());
 		}
