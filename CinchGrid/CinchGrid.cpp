@@ -206,13 +206,13 @@ void CinchGrid::SetScroll(HWND hWnd)
 	hsi.nPage  = client.right;
 
 	if ( overflowX){
-		SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
+		SetScrollInfo(hWnd, SB_HORZ, &hsi, TRUE);
 		ShowScrollBar(hWnd, SB_HORZ, true);
 	} else {
 		ShowScrollBar(hWnd, SB_HORZ, false);
 	}
 	if ( overflowY ){
-		SetScrollInfo(hWnd, SB_HORZ, &hsi, TRUE);
+		SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
 		ShowScrollBar(hWnd, SB_VERT, true);
 	} else {
 		ShowScrollBar(hWnd, SB_VERT, false);
