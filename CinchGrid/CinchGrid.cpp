@@ -68,8 +68,8 @@ CinchGrid::CinchGrid(HWND h, HINSTANCE inst, GridDelegate * d){
 
 	windowOffsetY = 0;
 
-	overflowX = 0;
-	overflowY = 0;
+	overflowX = false;
+	overflowY = false;
 
 	totalWidth = 0;
 	totalHeight = 0;
@@ -106,7 +106,7 @@ void CinchGrid::initialize(){
 		totalWidth += delegate->columnWidth(i);
 	}
 
-	totalHeight = (delegate->totalRows() + 1) * delegate->rowHeight();
+	totalHeight = (delegate->totalRows()) * delegate->rowHeight();
 	
 	RECT client;
 	GetClientRect(hWnd, &client);
@@ -128,9 +128,7 @@ void CinchGrid::initialize(){
 		left += col->getWidth();
 	}
 		 
-	if ( left > client.right ){
-		overflowX = true;
-	}
+	
 }
 
 void CinchGrid::reloadData(){
@@ -182,12 +180,12 @@ void CinchGrid::SetScroll(HWND hWnd)
 	if( totalWidth > client.right ){
 		overflowX = true;
 	} else {
-		overflowX = false;
+		overflowX = overflowX || false;
 	}
 	if ( totalHeight > client.bottom ){
 		overflowY = true;
 	} else {
-		overflowY = false;
+		overflowY = overflowY || false;
 	}
 
 
@@ -196,7 +194,7 @@ void CinchGrid::SetScroll(HWND hWnd)
     si.cbSize = sizeof(si);
     si.fMask  = SIF_RANGE | SIF_PAGE;
     si.nMin   = 0;
-	si.nMax   = delegate->totalRows() * delegate->rowHeight();
+	si.nMax   = (delegate->totalRows() * delegate->rowHeight()) + client.bottom;
 	si.nPage  = client.bottom;
 	SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
 
@@ -688,7 +686,7 @@ LRESULT CinchGrid::OnLButtonDown(WPARAM wParam, LPARAM lParam){
 			for(int i=0; i<newRows; i++){
 				delegate->prepareNewRow(clickedRow);
 			}
-			totalHeight = (delegate->totalRows() + 1) * delegate->rowHeight();
+			totalHeight = (delegate->totalRows()) * delegate->rowHeight();
 		}
 
 		//To account for the header space.
@@ -959,8 +957,8 @@ LRESULT CinchGrid::OnMouseWheel(WPARAM wParam, LPARAM lParam){
 		scrollOffsetY += 0 - zDelta;
 		RECT client;
 		GetClientRect(hWnd, &client);
-		if( scrollOffsetY > totalHeight - client.bottom ){
-			scrollOffsetY = totalHeight - client.bottom;
+		if( scrollOffsetY > totalHeight + client.bottom ){
+			scrollOffsetY = totalHeight + client.bottom;
 			
 		} else if ( scrollOffsetY < 0 ){
 			scrollOffsetY = 0;
@@ -1142,7 +1140,7 @@ LRESULT CALLBACK CinchGrid::DetailWndProc(HWND hWnd, UINT message, WPARAM wParam
 			if ( self->activeRow > self->delegate->totalRows() ){
 				if ( self->delegate->allowNewRows() ) {
 					self->delegate->prepareNewRow(self->activeRow-1);
-					self->totalHeight = (self->delegate->totalRows() + 1) * self->delegate->rowHeight();
+					self->totalHeight = (self->delegate->totalRows()) * self->delegate->rowHeight();
 				} else {
 					self->activeRow = 1;
 				}
