@@ -40,8 +40,8 @@ HWND CinchGrid::CreateCinchGrid(HWND parent, GridDelegate* delegate)
 	HWND hWnd = CreateWindowEx(0,
 		szClassName,
 		_T("Cinch Grid"),
-		WS_VISIBLE | WS_CHILD,
-		0, 0, 500, 500,
+		WS_CHILD,
+		0, 0, 0, 0,
 		parent,
 		NULL, GetModuleHandle(0), delegate);
 
@@ -132,7 +132,7 @@ void CinchGrid::initialize(){
 }
 
 void CinchGrid::reloadData(){
-	//stopEditing();
+	stopEditing();
 
 	delegate->willReloadData();
 	
@@ -253,7 +253,7 @@ void CinchGrid::SetupAndDrawOffscreenBitmap(){
  	GetClientRect(hWnd, &client);
 	
 	offscreenWidth = max(client.right, min(totalWidth, MAX_OFFSCREEN_WIDTH));
-	offscreenHeight = max(client.bottom, min(totalHeight, MAX_OFFSCREEN_HEIGHT));
+	offscreenHeight = max(1, min(totalHeight+client.bottom, MAX_OFFSCREEN_HEIGHT));
 
 	offscreenBitmap = CreateCompatibleBitmap(GetDC(hWnd), offscreenWidth, offscreenHeight);
 	SelectObject(offscreenDC, offscreenBitmap);
@@ -1400,9 +1400,9 @@ void CinchGrid::SetActiveRow(int row, bool silent){
 				
 		if ( !silent ){
 			PostMessage(GetParent(hWnd), CINCHGRID_ROW_SELECTED, 0, 0);
+			delegate->didSelectRow(GetActiveRow());
 		}
-
-		delegate->didSelectRow(GetActiveRow());
+		
 	}
 
 	startEditing(previousActiveRow-1, activeRow-1, activeCol);
