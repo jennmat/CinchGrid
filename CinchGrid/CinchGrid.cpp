@@ -1280,6 +1280,7 @@ void CinchGrid::adjustEditors(){
 
 void CinchGrid::startEditing(int previous, int row, int col){
 	int left = 0;
+	int firstEditableColumn = -1;
 	HWND previousWindow = HWND_TOP;
 	if( editingInitialized == false ){
 		reverseTabCapture = CreateWindowEx(WS_EX_CLIENTEDGE, L"STATIC", L"", WS_CHILD | WS_TABSTOP,
@@ -1295,6 +1296,7 @@ void CinchGrid::startEditing(int previous, int row, int col){
 	}
 	for(int i=0; i<numColumns; i++){
 		if( delegate->allowEditing(i) ){
+			if ( firstEditableColumn < 0 ) firstEditableColumn = i;
 			if ( columns[i]->getEditor() == NULL ){
 				HWND editor = delegate->editorForColumn(i, hWnd, hInst);
 				SendMessage(editor, WM_SETFONT, (WPARAM)delegate->getEditFont(), 0);
@@ -1329,8 +1331,8 @@ void CinchGrid::startEditing(int previous, int row, int col){
 		ShowWindow(tabCapture, SW_SHOW);
 	}
 
-	if ( col >= 0 ){
-		SetFocus(columns[col]->getEditor());
+	if ( firstEditableColumn >= 0 ){
+		SetFocus(columns[firstEditableColumn]->getEditor());
 	}
 	
 	SendMessage(GetFocus(), EM_SETSEL, 0, -1);
