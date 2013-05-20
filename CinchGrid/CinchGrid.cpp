@@ -369,7 +369,7 @@ void CinchGrid::DrawVerticalGridlines(HDC hdc, RECT client)
 		}
 		for(int i=0; i<numColumns; i++){
 			GridColumn* col = columns[i];
-			MoveToEx(hdc, left + col->getWidth()-1, client.top, NULL);
+			MoveToEx(hdc, left + col->getWidth()-1, client.top+delegate->rowHeight(), NULL);
 			LineTo(hdc, left + col->getWidth()-1, bottom + windowOffsetY );
 			left += col->getWidth();
 		}
@@ -391,7 +391,7 @@ void CinchGrid::DrawHorizontalGridlines(HDC hdc, RECT client)
 {
 	SelectObject(hdc, gridlinesPen);
 	if( delegate->drawHorizontalGridlines() ){
-		int i = windowOffsetY / client.bottom;
+		int i = windowOffsetY / client.bottom + 2;  //+2 is to skip the header, it draws it's own darker gridlines
 		int bottom = offscreenHeight;
 		if (  delegate->allowNewRows() == false ){
 			bottom = bottom+1;
@@ -414,6 +414,17 @@ void CinchGrid::DrawHorizontalGridlines(HDC hdc, RECT client)
 			LineTo(hdc, totalWidth, totalHeight-1);
 		}
 	}
+
+	SelectObject(hdc, headerPen);	
+
+	MoveToEx(hdc, 0, 0, NULL);
+	int right = totalArea.right;
+	if ( !delegate->allowNewColumns() ){
+		right = totalWidth;
+	}
+	LineTo(hdc, right, 0);
+	MoveToEx(hdc, 0, delegate->rowHeight(), NULL);
+	LineTo(hdc, right, delegate->rowHeight());
 }
 
 void CinchGrid::DrawTextForRow(HDC hdc, RECT client, int row){
@@ -441,8 +452,8 @@ void CinchGrid::ClearActiveRow(int row, HDC hdc, RECT client)
 	RECT rect;
 	rect.left = 0;
 	rect.right = totalWidth;
-	rect.top = (row) * delegate->rowHeight();
-	rect.bottom = rect.top + delegate->rowHeight();
+	rect.top = (row) * delegate->rowHeight() ;
+	rect.bottom = rect.top + delegate->rowHeight()+1;
 	FillRect(hdc, &rect, solidWhiteBrush);
 	//Gridlines
 	if ( delegate->drawHorizontalGridlines()){
