@@ -642,7 +642,7 @@ LRESULT CinchGrid::OnLButtonUp(WPARAM wParam, LPARAM lParam){
 
 		InvalidateRect(hWnd, NULL, true);
 
-		delegate->didChangeColumnWidth(activelyDraggedColumn);
+		delegate->didChangeColumnWidth(activelyDraggedColumn, mouseXPos-accum);
 	}
 
 	return MA_ACTIVATE;

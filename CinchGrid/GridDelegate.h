@@ -24,7 +24,7 @@ public:
 	virtual void willReloadData() = 0;
 	virtual void didReloadData() = 0;
 
-	virtual void didChangeColumnWidth(int)=0;
+	virtual void didChangeColumnWidth(int, int)=0;
 
 	virtual void didSelectRow(int) = 0;
 
@@ -76,7 +76,7 @@ public:
 	void willReloadData();
 	void didReloadData();
 
-	void didChangeColumnWidth(int);
+	void didChangeColumnWidth(int, int);
 
 	void didSelectRow(int);
 
@@ -123,7 +123,7 @@ public:
 	void willReloadData();
 	void didReloadData();
 
-	void didChangeColumnWidth(int);
+	void didChangeColumnWidth(int, int);
 
 	void didSelectRow(int row);
 

@@ -149,5 +149,5 @@ void ReferenceEditableDelegate::didSelectRow(int row){
 void ReferenceEditableDelegate::setGrid(CinchGrid* grid){
 }
 
-void ReferenceEditableDelegate::didChangeColumnWidth(int col){
+void ReferenceEditableDelegate::didChangeColumnWidth(int col, int newWidth){
 }
