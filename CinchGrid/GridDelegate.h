@@ -24,6 +24,8 @@ public:
 	virtual void willReloadData() = 0;
 	virtual void didReloadData() = 0;
 
+	virtual void didChangeColumnWidth(int)=0;
+
 	virtual void didSelectRow(int) = 0;
 
 	virtual void setupEditorForCell(HWND editor, int row, int col) = 0;
@@ -74,6 +76,8 @@ public:
 	void willReloadData();
 	void didReloadData();
 
+	void didChangeColumnWidth(int);
+
 	void didSelectRow(int);
 
 	bool allowEditing(int);
@@ -118,6 +122,8 @@ public:
 
 	void willReloadData();
 	void didReloadData();
+
+	void didChangeColumnWidth(int);
 
 	void didSelectRow(int row);
 

@@ -641,6 +641,8 @@ LRESULT CinchGrid::OnLButtonUp(WPARAM wParam, LPARAM lParam){
 		SetupAndDrawOffscreenBitmap();
 
 		InvalidateRect(hWnd, NULL, true);
+
+		delegate->didChangeColumnWidth(activelyDraggedColumn);
 	}
 
 	return MA_ACTIVATE;

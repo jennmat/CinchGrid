@@ -192,3 +192,6 @@ void ReferenceDelegate::didSelectRow(int row){
 
 void ReferenceDelegate::setGrid(CinchGrid* grid){
 }
+
+void ReferenceDelegate::didChangeColumnWidth(int col){
+}
