@@ -108,6 +108,7 @@ private:
 	void DrawActiveRow(HDC hdc, RECT client);
 	void ClearActiveRow(int row, HDC hdc, RECT client);
 	
+
 	LRESULT OnKeyUp(WPARAM wParam, LPARAM lParam);
 	LRESULT OnKeyDown(WPARAM wParam, LPARAM lParam);
 	LRESULT OnMouseMove(WPARAM wParam, LPARAM lParam);

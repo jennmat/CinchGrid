@@ -511,6 +511,8 @@ void CinchGrid::DrawCellText(HDC hdc, RECT client)
 	}
 }
 
+
+
 LRESULT CinchGrid::OnKeyDown(WPARAM wParam, LPARAM lParam){
 	
 	RECT client;
@@ -521,29 +523,29 @@ LRESULT CinchGrid::OnKeyDown(WPARAM wParam, LPARAM lParam){
 		switch(wParam){
 		case VK_UP:
 			if( activeRow - 1 > 0 ){
-				SetActiveRow(activeRow-1);
+				SetActiveRow(activeRow-1, true);
 				ScrollRowIntoViewFromBeneath(activeRow+1);
 			}
 			break;
 		case VK_DOWN:
 			if ( activeRow + 1 <= delegate->totalRows() ){
-				SetActiveRow(activeRow+1);
+				SetActiveRow(activeRow+1, true);
 				ScrollRowIntoView(activeRow+1);	
 			}
 			break;
 		case VK_NEXT:
 			if( activeRow + pageSize > delegate->totalRows() ){
-				SetActiveRow(delegate->totalRows());
+				SetActiveRow(delegate->totalRows(), true);
 			} else {
-				SetActiveRow(activeRow+pageSize);
+				SetActiveRow(activeRow+pageSize, true);
 			}
 			ScrollRowIntoView(activeRow);	
 			break;
 		case VK_PRIOR:
 			if( activeRow - pageSize < 1 ){
-				SetActiveRow(1);
+				SetActiveRow(1, true);
 			} else {
-				SetActiveRow(activeRow - pageSize);
+				SetActiveRow(activeRow - pageSize, true);
 			}
 			ScrollRowIntoViewFromBeneath(activeRow);	
 			break;
@@ -556,7 +558,15 @@ LRESULT CinchGrid::OnKeyDown(WPARAM wParam, LPARAM lParam){
 }
 
 LRESULT CinchGrid::OnKeyUp(WPARAM wParam, LPARAM lParam){
-	
+	switch(wParam){
+		case VK_UP:
+		case VK_DOWN:
+		case VK_NEXT:
+		case VK_PRIOR:
+			PostMessage(GetParent(hWnd), CINCHGRID_ROW_SELECTED, 0, 0);
+			delegate->didSelectRow(GetActiveRow());
+			break;
+		}
 	
 	SetFocus(hWnd);
 	return MA_ACTIVATEANDEAT;
