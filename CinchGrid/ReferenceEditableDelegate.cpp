@@ -40,25 +40,19 @@ int ReferenceEditableDelegate::rowHeight(){
 	return 25;
 }
 
-int ReferenceEditableDelegate::headerContentLength(int col){
-	return 0;
-}
-
-void ReferenceEditableDelegate::headerContent(int col, wchar_t* content) {
+void ReferenceEditableDelegate::headerContent(int col, const wchar_t* &content) {
+	content = TEXT("");
 }
 
 bool ReferenceEditableDelegate::stickyHeaders(){
 	return false;
 }
 
-int ReferenceEditableDelegate::cellContentLength(int row, int col){
-	return wcslen(data[row][col]);
-}
-
-void ReferenceEditableDelegate::cellContent(int row, int col, wchar_t* content) {
+void ReferenceEditableDelegate::cellContent(int row, int col, const wchar_t* &content) {
 	if( data[row][col] != NULL ){
-		int len = cellContentLength(row, col);
-		wcscpy_s(content, len+1, data[row][col]);
+		int len = wcslen(data[row][col]);
+		content = new wchar_t[len];
+		wcscpy_s((wchar_t*)content, len+1, data[row][col]);
 	}
 }
 

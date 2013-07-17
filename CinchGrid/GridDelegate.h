@@ -11,11 +11,9 @@ public:
 
 	virtual int columnWidth(int column)=0;
 	virtual int rowHeight() = 0;
-	virtual int headerContentLength(int)=0;
-	virtual void headerContent(int, wchar_t*)=0;
+	virtual void headerContent(int, const wchar_t* &)=0;
 
-	virtual int cellContentLength(int, int)=0;
-	virtual void cellContent(int, int, wchar_t*)=0;
+	virtual void cellContent(int, int, const wchar_t* &)=0;
 
 	virtual bool stickyHeaders() = 0;
 
@@ -66,11 +64,9 @@ public:
 	int columnWidth(int column);
 	int rowHeight();
 
-	int headerContentLength(int);
-	void headerContent(int, wchar_t*);
+	void headerContent(int, const wchar_t* &);
 
-	int cellContentLength(int, int);
-	void cellContent(int, int, wchar_t*);
+	void cellContent(int, int, const wchar_t* &);
 
 	bool stickyHeaders();
 	
@@ -120,11 +116,9 @@ public:
 	int columnWidth(int column);
 	int rowHeight();
 
-	int headerContentLength(int);
-	void headerContent(int, wchar_t*);
+	void headerContent(int, const wchar_t* &);
 
-	int cellContentLength(int, int);
-	void cellContent(int, int, wchar_t*);
+	void cellContent(int, int, const wchar_t* &);
 
 	bool stickyHeaders();
 	

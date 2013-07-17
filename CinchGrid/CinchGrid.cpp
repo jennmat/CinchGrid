@@ -103,11 +103,9 @@ void CinchGrid::initialize(){
 	totalWidth = 0;
 
 	for(int i=0; i<delegate->totalColumns(); i++){
-		int len = delegate->headerContentLength(i);
-		wchar_t* t = new wchar_t[len+1];
-		memset(t, 0, (len+1)*sizeof(wchar_t));
-		delegate->headerContent(i, t);
-		addColumn(t, delegate->columnWidth(i));
+		const wchar_t* headerContent = NULL;
+		delegate->headerContent(i, headerContent);
+		addColumn((wchar_t*)headerContent, delegate->columnWidth(i));
 		totalWidth += delegate->columnWidth(i);
 	}
 
@@ -474,12 +472,11 @@ void CinchGrid::DrawTextForRow(HDC hdc, RECT client, int row){
 			FillRect(hdc, &textRect, solidWhiteBrush); 
 		}
 
-		int len = delegate->cellContentLength(row, col);
-		wchar_t* content = new wchar_t[len+1];
-		memset(content, 0, len);
+		const wchar_t* content;
 		delegate->cellContent(row, col, content);
 
 		int rc = DrawText(hdc, content, -1, &textRect, DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS | DT_NOPREFIX);
+	
 		delete content;
 	}
 }

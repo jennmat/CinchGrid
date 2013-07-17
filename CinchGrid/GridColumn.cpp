@@ -11,7 +11,7 @@ GridColumn::GridColumn(wchar_t * header, int width){
 }
 
 GridColumn::~GridColumn(){
-	free(header);
+	delete header;
 }
 
 wchar_t * GridColumn::getHeader(){

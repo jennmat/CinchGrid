@@ -29,35 +29,32 @@ int ReferenceDelegate::columnWidth(int column){
 	return 125;
 }
 
-int ReferenceDelegate::headerContentLength(int){
-	return 0;
-}
 
-void ReferenceDelegate::headerContent(int col, wchar_t*) {
+void ReferenceDelegate::headerContent(int col, const wchar_t* &content) {
 	//if ( col == 0 ){
 	//} 
 	///if ( col == 1 ){
 		//return TEXT("Date");
 	//}
 	//return TEXT("Text");
+	
+	content = L"TEST";
 }
 
 bool ReferenceDelegate::stickyHeaders(){
 	return true;
 }
 
-int ReferenceDelegate::cellContentLength(int row, int col){
-	return 20;
-}
 
-void ReferenceDelegate::cellContent(int row, int col, wchar_t* content) {
+void ReferenceDelegate::cellContent(int row, int col, const wchar_t* &content) {
 	
 	//if( data[row][col] != NULL ){
 	//	return data[row][col];
 	//}
 	
 	//if ( col == 0 ){
-		_itow_s(row, content, 20, 10);
+	content = new wchar_t[20];
+	_itow_s(row, (wchar_t*)content, 20, 10);
 
 //	}
 
@@ -179,12 +176,7 @@ void ReferenceDelegate::prepareNewRow(int row){
 }
 
 void ReferenceDelegate::setupEditorForCell(HWND editor, int row, int col){
-	int len = this->cellContentLength(row, col);
-	wchar_t* content = new wchar_t[len];
-	this->cellContent(row, col, content);
-
-	SendMessage(editor, WM_SETTEXT, (WPARAM)0, (LPARAM)content);
-	delete content;
+	SendMessage(editor, WM_SETTEXT, (WPARAM)0, (LPARAM)data[row][col]);
 }
 
 void ReferenceDelegate::headerContextClick(HWND grid, int x, int y){
