@@ -7,6 +7,7 @@ private:
 	HWND editor;
 public:
 	GridColumn(wchar_t*, int);
+	~GridColumn();
 	int getWidth();
 	void setWidth(int);
 	wchar_t* getHeader();

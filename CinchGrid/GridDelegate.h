@@ -13,7 +13,9 @@ public:
 	virtual int rowHeight() = 0;
 	virtual int headerContentLength(int)=0;
 	virtual void headerContent(int, wchar_t*)=0;
-	virtual const wchar_t* cellContent(int, int)=0;
+
+	virtual int cellContentLength(int, int)=0;
+	virtual void cellContent(int, int, wchar_t*)=0;
 
 	virtual bool stickyHeaders() = 0;
 
@@ -64,8 +66,11 @@ public:
 	int columnWidth(int column);
 	int rowHeight();
 
-	wchar_t* headerContent(int);
-	const wchar_t* cellContent(int, int);
+	int headerContentLength(int);
+	void headerContent(int, wchar_t*);
+
+	int cellContentLength(int, int);
+	void cellContent(int, int, wchar_t*);
 
 	bool stickyHeaders();
 	
@@ -108,14 +113,18 @@ private:
 	wchar_t* data[MAX_ROWS][MAX_COLUMNS];
 public:
 	ReferenceEditableDelegate();
+	~ReferenceEditableDelegate();
 	int totalRows();
 	int totalColumns();
 
 	int columnWidth(int column);
 	int rowHeight();
 
-	wchar_t* headerContent(int);
-	const wchar_t* cellContent(int, int);
+	int headerContentLength(int);
+	void headerContent(int, wchar_t*);
+
+	int cellContentLength(int, int);
+	void cellContent(int, int, wchar_t*);
 
 	bool stickyHeaders();
 	

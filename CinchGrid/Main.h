@@ -6,3 +6,5 @@
 
 CinchGrid *grid;
 HWND gridWindow;
+ReferenceDelegate* referenceDelegate;
+ReferenceEditableDelegate* referenceEditableDelegate;

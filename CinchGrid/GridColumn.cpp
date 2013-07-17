@@ -10,6 +10,10 @@ GridColumn::GridColumn(wchar_t * header, int width){
 	this->editor = NULL;
 }
 
+GridColumn::~GridColumn(){
+	free(header);
+}
+
 wchar_t * GridColumn::getHeader(){
 	return this->header;
 }

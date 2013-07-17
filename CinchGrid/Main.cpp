@@ -66,6 +66,11 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 		}
 	}
 
+	delete referenceDelegate;
+	delete referenceEditableDelegate;
+
+	_CrtDumpMemoryLeaks();
+
 	return (int) msg.wParam;
 }
 
@@ -134,9 +139,11 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	RECT client;
 	GetClientRect(hWnd, &client);
+	//referenceDelegate = new ReferenceDelegate();
+	referenceEditableDelegate = new ReferenceEditableDelegate();
 	
-	gridWindow = CinchGrid::CreateCinchGrid(hWnd, new ReferenceDelegate());
-	//gridWindow = CinchGrid::CreateCinchGrid(hWnd, new ReferenceEditableDelegate());
+	//gridWindow = CinchGrid::CreateCinchGrid(hWnd, referenceDelegate);
+	gridWindow = CinchGrid::CreateCinchGrid(hWnd, referenceEditableDelegate);
 	SetWindowPos(gridWindow, HWND_TOP, 0, 0, client.right, client.bottom, 0);
 	ShowWindow(gridWindow, nCmdShow);
 

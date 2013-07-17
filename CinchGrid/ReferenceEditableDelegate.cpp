@@ -14,6 +14,16 @@ ReferenceEditableDelegate::ReferenceEditableDelegate(){
 	}
 }
 
+ReferenceEditableDelegate::~ReferenceEditableDelegate(){
+	int i,j;
+	for(i=0;i<MAX_ROWS;i++){
+		for(j=0; j<2; j++){
+			delete data[i][j];
+		}
+	}
+
+}
+
 int ReferenceEditableDelegate::totalColumns(){
 	return 2;
 }
@@ -30,21 +40,26 @@ int ReferenceEditableDelegate::rowHeight(){
 	return 25;
 }
 
-wchar_t* ReferenceEditableDelegate::headerContent(int col) {
-	return TEXT("");
+int ReferenceEditableDelegate::headerContentLength(int col){
+	return 0;
+}
+
+void ReferenceEditableDelegate::headerContent(int col, wchar_t* content) {
 }
 
 bool ReferenceEditableDelegate::stickyHeaders(){
 	return false;
 }
 
-const wchar_t* ReferenceEditableDelegate::cellContent(int row, int col) {
-	if( data[row][col] != NULL ){
-		return data[row][col];
-	}
-	
-	return TEXT("");
+int ReferenceEditableDelegate::cellContentLength(int row, int col){
+	return wcslen(data[row][col]);
+}
 
+void ReferenceEditableDelegate::cellContent(int row, int col, wchar_t* content) {
+	if( data[row][col] != NULL ){
+		int len = cellContentLength(row, col);
+		wcscpy_s(content, len+1, data[row][col]);
+	}
 }
 
 HFONT ReferenceEditableDelegate::getFont(){
@@ -87,7 +102,8 @@ HWND ReferenceEditableDelegate::editorForColumn(int col, HWND parent, HINSTANCE 
 
 void ReferenceEditableDelegate::editingFinished(HWND editor, int row, int col)
 {
-	data[row][col] = (wchar_t *)malloc(100*sizeof(TCHAR));
+	delete data[row][col];
+	data[row][col] = new wchar_t[100];
 	GetWindowText(editor, data[row][col], 100);
 	
 }
@@ -113,7 +129,7 @@ bool ReferenceEditableDelegate::allowNewColumns() {
 
 void ReferenceEditableDelegate::setupEditorForCell(HWND editor, int row, int col){
 	if ( col == 0 ){
-		const wchar_t* timeStr = this->cellContent(row, col);
+		const wchar_t* timeStr = data[row][col];
 		if (timeStr == NULL ) return;
 
 		SYSTEMTIME time;
@@ -130,7 +146,7 @@ void ReferenceEditableDelegate::setupEditorForCell(HWND editor, int row, int col
 		DateTime_SetSystemtime(editor, GDT_VALID, &time);
 		return;
 	}
-	SendMessage(editor, WM_SETTEXT, (WPARAM)0, (LPARAM)this->cellContent(row, col));
+	SendMessage(editor, WM_SETTEXT, (WPARAM)0, (LPARAM)data[row][col]);
 }
 
 void ReferenceEditableDelegate::headerContextClick(HWND hwnd, int x, int y){
