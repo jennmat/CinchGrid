@@ -58,6 +58,7 @@ private:
 
 	HPEN headerPen;
 	HPEN gridlinesPen;
+	HPEN borderlinesPen;
 
 	HBRUSH solidWhiteBrush;
 	HBRUSH activeRowBrush;
@@ -132,7 +133,9 @@ public:
 	void SetActiveRow(int row, bool silent=false);
 	void ScrollRowIntoView(int row);
 
+	
 	CinchGrid(HWND hWnd, HINSTANCE hInst, GridDelegate * delegate);
+	~CinchGrid();
 
 	static HWND CreateCinchGrid(HWND parent, GridDelegate * delegate);
 };

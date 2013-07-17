@@ -11,7 +11,8 @@ public:
 
 	virtual int columnWidth(int column)=0;
 	virtual int rowHeight() = 0;
-	virtual wchar_t* headerContent(int)=0;
+	virtual int headerContentLength(int)=0;
+	virtual void headerContent(int, wchar_t*)=0;
 	virtual const wchar_t* cellContent(int, int)=0;
 
 	virtual bool stickyHeaders() = 0;

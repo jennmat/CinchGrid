@@ -85,7 +85,8 @@ CinchGrid::CinchGrid(HWND h, HINSTANCE inst, GridDelegate * d){
 	initialize();
 
 	headerPen = CreatePen(PS_SOLID, 1, RGB(137, 140, 149));
-	gridlinesPen = CreatePen(PS_SOLID, 1, RGB(210, 210, 210));
+	gridlinesPen = CreatePen(PS_SOLID, 1, RGB(205, 205, 205));
+	borderlinesPen = CreatePen(PS_SOLID, 1, RGB(137, 140, 149));
 	solidWhiteBrush = CreateSolidBrush(RGB(255,255,255));
 	activeRowBrush = CreateSolidBrush(RGB(167,205,240));
 		
@@ -102,7 +103,10 @@ void CinchGrid::initialize(){
 	totalWidth = 0;
 
 	for(int i=0; i<delegate->totalColumns(); i++){
-		addColumn(delegate->headerContent(i), delegate->columnWidth(i));
+		int len = delegate->headerContentLength(i);
+		wchar_t* t = new wchar_t[len+1];
+		delegate->headerContent(i, t);
+		addColumn(t, delegate->columnWidth(i));
 		totalWidth += delegate->columnWidth(i);
 	}
 
@@ -129,6 +133,12 @@ void CinchGrid::initialize(){
 	}
 		 
 	
+}
+
+CinchGrid::~CinchGrid(){
+	for(int i=0; i<numColumns; i++){
+		free(columns[i]->getHeader());
+	}
 }
 
 void CinchGrid::reloadData(){
@@ -285,7 +295,7 @@ void DrawColumnHeader(HDC hdc, int x, int width, int height, LPWSTR text)
 	MoveToEx(hdc, x+width-1, 0, NULL);
 	LineTo(hdc, x+width-1, height);
 	TRIVERTEX vertex[2] ;
-	vertex[0].x     = x;
+	vertex[0].x     = x+1;
 	vertex[0].y     = 1;
 	vertex[0].Red   = 0xf200;
 	vertex[0].Green = 0xf200;
@@ -328,18 +338,22 @@ void CinchGrid::DrawHeader(HDC hdc, RECT client, bool fromPaintRoutine){
 	
 
 	SelectObject(hdc, headerPen);	
-
-	MoveToEx(hdc, 0, 0, NULL);
 	int right = totalArea.right;
+	
+	/*MoveToEx(hdc, 0, 0, NULL);
 	if ( !delegate->allowNewColumns() ){
 		right = totalWidth;
 	}
-	LineTo(hdc, right, 0);
-	MoveToEx(hdc, 0, delegate->rowHeight(), NULL);
-	LineTo(hdc, right, delegate->rowHeight());
+	LineTo(hdc, right, 0);*/
+	//MoveToEx(hdc, 0, delegate->rowHeight(), NULL);
+	//LineTo(hdc, right, delegate->rowHeight());
 
 	int j = 0;
 	int left = 0;
+
+	MoveToEx(hdc, 0, 0, NULL);
+	LineTo(hdc, 0, delegate->rowHeight());
+
 	for(int l=0; l<numColumns; l++){
 		GridColumn* col = columns[l];
 		int width = col->getWidth();
@@ -359,14 +373,24 @@ void CinchGrid::DrawHeader(HDC hdc, RECT client, bool fromPaintRoutine){
 
 void CinchGrid::DrawVerticalGridlines(HDC hdc, RECT client)
 {
+	
+	int bottom = offscreenHeight;
+	if ( !delegate->allowNewRows() ){
+		bottom = totalArea.bottom;
+	}
+
+	//SelectObject(hdc, borderlinesPen);
+
+	//MoveToEx(hdc, 0, client.top+delegate->rowHeight(), NULL);
+	//LineTo(hdc, 0, bottom + windowOffsetY );
+
 	SelectObject(hdc, gridlinesPen);
 	
+	int left = 0;
+		
 	if ( delegate->drawVerticalGridlines() ){
-		int left = 0;
-		int bottom = offscreenHeight;
-		if ( !delegate->allowNewRows() ){
-			bottom = totalArea.bottom;
-		}
+		
+
 		for(int i=0; i<numColumns; i++){
 			GridColumn* col = columns[i];
 			MoveToEx(hdc, left + col->getWidth()-1, client.top+delegate->rowHeight(), NULL);
@@ -381,10 +405,16 @@ void CinchGrid::DrawVerticalGridlines(HDC hdc, RECT client)
 				left += DEFAULT_COLUMN_WIDTH;
 			}
 		}
-	} else {
-		MoveToEx(hdc, totalWidth, 0, NULL);
-		LineTo(hdc, totalWidth, totalHeight);
+	
 	}
+
+	//SelectObject(hdc, borderlinesPen);
+	
+	//GridColumn* col = columns[numColumns-1];
+	//MoveToEx(hdc, left + col->getWidth()-1, client.top+delegate->rowHeight(), NULL);
+	//LineTo(hdc, left + col->getWidth()-1, bottom + windowOffsetY );
+			
+	
 }
 
 void CinchGrid::DrawHorizontalGridlines(HDC hdc, RECT client)
@@ -407,14 +437,13 @@ void CinchGrid::DrawHorizontalGridlines(HDC hdc, RECT client)
 			}
 			i+= 1;
 		}
-	} else {
-		//Always draw bottom gridline
-		if ( totalHeight < client.bottom ){
-			MoveToEx(hdc, 0, totalHeight-1, NULL);
-			LineTo(hdc, totalWidth, totalHeight-1);
-		}
 	}
 
+	//Always draw bottom gridline
+	//SelectObject(hdc, borderlinesPen);
+	//MoveToEx(hdc, 0, client.bottom-1, NULL);
+	//LineTo(hdc, totalWidth, client.bottom-1);
+	
 	SelectObject(hdc, headerPen);	
 
 	MoveToEx(hdc, 0, 0, NULL);
@@ -422,7 +451,7 @@ void CinchGrid::DrawHorizontalGridlines(HDC hdc, RECT client)
 	if ( !delegate->allowNewColumns() ){
 		right = totalWidth;
 	}
-	LineTo(hdc, right, 0);
+	//LineTo(hdc, right, 0);
 	MoveToEx(hdc, 0, delegate->rowHeight(), NULL);
 	LineTo(hdc, right, delegate->rowHeight());
 }
@@ -790,10 +819,12 @@ LRESULT CinchGrid::OnPaint(WPARAM wParam, LPARAM lParam){
     PAINTSTRUCT  ps;
 
 	hdc = BeginPaint(hWnd, &ps);
-		
+	
+	
 	
 	BitBlt(hdc, ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right, ps.rcPaint.bottom, offscreenDC, ps.rcPaint.left + scrollOffsetX, ps.rcPaint.top + scrollOffsetY - windowOffsetY, SRCCOPY);
-		
+	
+	
 	if( draggingHeader ){
 		DrawHeaderDragGuideline(hdc, ps.rcPaint);
 	}
@@ -802,7 +833,17 @@ LRESULT CinchGrid::OnPaint(WPARAM wParam, LPARAM lParam){
 		DrawHeader(hdc, ps.rcPaint, true);
 	}
 
-	
+
+	RECT rect;
+	SelectObject(hdc, borderlinesPen);
+	GetClientRect(hWnd, &rect);
+	MoveToEx(hdc, 0, 0, NULL);
+	LineTo(hdc, rect.right-1, 0);
+	LineTo(hdc, rect.right-1, rect.bottom-1);
+	LineTo(hdc, 0, rect.bottom-1);
+	LineTo(hdc, 0, 0);
+
+
 	
 	/* Draws a visualization of the back buffers */
 	//HPEN red = CreatePen(PS_SOLID, 1, RGB(255,0,0));
@@ -1012,7 +1053,17 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		SetWindowLong(hWnd, GWL_USERDATA, (LONG)grid);
 		return TRUE;
 		}
+		break;
+	case WM_NCDESTROY:
+		delete grid;
+		break;
 	case WM_ERASEBKGND:
+		/*{
+			RECT rect;
+			GetClientRect(hWnd, &rect);
+			HDC dc = (HDC)wParam;
+			FillRect(dc, &rect, CreateSolidBrush(RGB(245,245,245)));
+		}*/
 		return 1;
 	case WM_GETDLGCODE:
 		return DLGC_WANTARROWS;
@@ -1045,6 +1096,7 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		return grid->OnHScroll(wParam, lParam);
 	case WM_VSCROLL:
 		return grid->OnVScroll(wParam, lParam);
+	
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
@@ -1390,8 +1442,8 @@ void CinchGrid::DrawGridElements(HDC hdc, RECT client)
 {
 	FillRect(offscreenDC, &totalArea, solidWhiteBrush);
 
-	DrawVerticalGridlines(hdc, client);
 	DrawHorizontalGridlines(hdc, client);
+	DrawVerticalGridlines(hdc, client);
 	DrawCellText(hdc, client);
 
 	DrawActiveRow(hdc, client);
@@ -1427,7 +1479,6 @@ void CinchGrid::SetActiveRow(int row, bool silent){
 			PostMessage(GetParent(hWnd), CINCHGRID_ROW_SELECTED, 0, 0);
 			delegate->didSelectRow(GetActiveRow());
 		}
-		
 	}
 
 	startEditing(previousActiveRow-1, activeRow-1, activeCol);
