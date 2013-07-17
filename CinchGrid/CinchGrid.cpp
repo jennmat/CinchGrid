@@ -103,9 +103,9 @@ void CinchGrid::initialize(){
 	totalWidth = 0;
 
 	for(int i=0; i<delegate->totalColumns(); i++){
-		const wchar_t* headerContent = NULL;
+		wstring headerContent;
 		delegate->headerContent(i, headerContent);
-		addColumn((wchar_t*)headerContent, delegate->columnWidth(i));
+		addColumn(headerContent, delegate->columnWidth(i));
 		totalWidth += delegate->columnWidth(i);
 	}
 
@@ -176,7 +176,7 @@ void CinchGrid::clearColumns(){
 	numColumns = 0;
 }
 
-void CinchGrid::addColumn(wchar_t * header, int width) {
+void CinchGrid::addColumn(wstring header, int width) {
 	columns[numColumns] = new GridColumn(header, width);
 	numColumns++;
 }
@@ -357,7 +357,7 @@ void CinchGrid::DrawHeader(HDC hdc, RECT client, bool fromPaintRoutine){
 		GridColumn* col = columns[l];
 		int width = col->getWidth();
 		//Rectangle(hdc, i, 0, i + COL_SPACING, delegate->rowHeight());
-		DrawColumnHeader(hdc, left, width, delegate->rowHeight(), col->getHeader());
+		DrawColumnHeader(hdc, left, width, delegate->rowHeight(), (LPWSTR)col->getHeader().c_str());
 		left += width;
 
 		j++;
@@ -472,12 +472,11 @@ void CinchGrid::DrawTextForRow(HDC hdc, RECT client, int row){
 			FillRect(hdc, &textRect, solidWhiteBrush); 
 		}
 
-		const wchar_t* content;
+		wstring content;
 		delegate->cellContent(row, col, content);
 
-		int rc = DrawText(hdc, content, -1, &textRect, DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS | DT_NOPREFIX);
+		int rc = DrawText(hdc, content.c_str(), -1, &textRect, DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS | DT_NOPREFIX);
 	
-		delete content;
 	}
 }
 
@@ -1330,7 +1329,7 @@ void CinchGrid::startHeaderTitleEditing(int col){
 		SendMessage(headerEditor, WM_SETFONT, (WPARAM)delegate->getEditFont(), 0);
 	}
 
-	SendMessage(headerEditor, WM_SETTEXT, (WPARAM)0, (LPARAM)columns[col]->getHeader());
+	SendMessage(headerEditor, WM_SETTEXT, (WPARAM)0, (LPARAM)columns[col]->getHeader().c_str());
 
 	int x = 0;
 	int i = 0;

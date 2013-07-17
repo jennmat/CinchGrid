@@ -1,6 +1,7 @@
 
 #include "stdafx.h"
 #include <string.h>
+#include <sstream>
 
 ReferenceDelegate::ReferenceDelegate(){
 	int i,j;
@@ -30,7 +31,7 @@ int ReferenceDelegate::columnWidth(int column){
 }
 
 
-void ReferenceDelegate::headerContent(int col, const wchar_t* &content) {
+void ReferenceDelegate::headerContent(int col, wstring &content) {
 	//if ( col == 0 ){
 	//} 
 	///if ( col == 1 ){
@@ -46,16 +47,16 @@ bool ReferenceDelegate::stickyHeaders(){
 }
 
 
-void ReferenceDelegate::cellContent(int row, int col, const wchar_t* &content) {
+void ReferenceDelegate::cellContent(int row, int col, wstring& content) {
 	
 	//if( data[row][col] != NULL ){
 	//	return data[row][col];
 	//}
 	
 	//if ( col == 0 ){
-	content = new wchar_t[20];
-	_itow_s(row, (wchar_t*)content, 20, 10);
-
+	wstringstream s;
+	s << row;
+	content = s.str();
 //	}
 
 	//if( col == 1 ){

@@ -1,5 +1,8 @@
 
 #include "stdafx.h"
+#include <string>
+using namespace std;
+
 
 class CinchGrid;
 
@@ -11,9 +14,9 @@ public:
 
 	virtual int columnWidth(int column)=0;
 	virtual int rowHeight() = 0;
-	virtual void headerContent(int, const wchar_t* &)=0;
+	virtual void headerContent(int, wstring &)=0;
 
-	virtual void cellContent(int, int, const wchar_t* &)=0;
+	virtual void cellContent(int, int, wstring &)=0;
 
 	virtual bool stickyHeaders() = 0;
 
@@ -64,9 +67,9 @@ public:
 	int columnWidth(int column);
 	int rowHeight();
 
-	void headerContent(int, const wchar_t* &);
+	void headerContent(int, wstring &);
 
-	void cellContent(int, int, const wchar_t* &);
+	void cellContent(int, int, wstring &);
 
 	bool stickyHeaders();
 	

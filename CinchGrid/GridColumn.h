@@ -1,16 +1,19 @@
 
+#include "stdafx.h"
+#include <string>
+using namespace std;
 
 class GridColumn {
 private:
-	wchar_t * header;
+	wstring header;
 	int width;
 	HWND editor;
 public:
-	GridColumn(wchar_t*, int);
+	GridColumn(wstring, int);
 	~GridColumn();
 	int getWidth();
 	void setWidth(int);
-	wchar_t* getHeader();
+	wstring getHeader();
 	void setHeader(wchar_t*);
 	HWND getEditor();
 	void setEditor(HWND);

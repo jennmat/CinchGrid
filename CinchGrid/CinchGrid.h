@@ -76,7 +76,7 @@ private:
 	HWND reverseTabCapture;
 
 	void clearColumns();
-	void addColumn(wchar_t * header, int width);
+	void addColumn(wstring header, int width);
 
 	void initialize();
 

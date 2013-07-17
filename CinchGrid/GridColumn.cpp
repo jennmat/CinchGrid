@@ -4,17 +4,16 @@
 
 
 
-GridColumn::GridColumn(wchar_t * header, int width){
+GridColumn::GridColumn(wstring header, int width){
 	this->header = header;
 	this->width = width;
 	this->editor = NULL;
 }
 
 GridColumn::~GridColumn(){
-	delete header;
 }
 
-wchar_t * GridColumn::getHeader(){
+wstring GridColumn::getHeader(){
 	return this->header;
 }
 
