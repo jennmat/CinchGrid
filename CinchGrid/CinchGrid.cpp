@@ -96,6 +96,7 @@ CinchGrid::CinchGrid(HWND h, HINSTANCE inst, GridDelegate * d){
 void CinchGrid::initialize(){
 
 	for(int i=0; i<numColumns; i++){
+		delete columns[i];
 		columns[i] = NULL;
 	}
 
