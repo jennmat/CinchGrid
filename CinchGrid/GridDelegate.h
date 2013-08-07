@@ -9,6 +9,7 @@ class CinchGrid;
 class GridDelegate
 {
 public:
+	virtual ~GridDelegate() {};
 	virtual int totalRows()=0;
 	virtual int totalColumns()=0;
 
