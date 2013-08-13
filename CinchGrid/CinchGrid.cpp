@@ -349,19 +349,20 @@ void CinchGrid::DrawHeader(HDC hdc, RECT client, bool fromPaintRoutine){
 	SelectObject(hdc, headerPen);	
 	int right = totalArea.right;
 	
-	/*MoveToEx(hdc, 0, 0, NULL);
+	MoveToEx(hdc, 0, 0, NULL);
 	if ( !delegate->allowNewColumns() ){
 		right = totalWidth;
 	}
-	LineTo(hdc, right, 0);*/
-	//MoveToEx(hdc, 0, delegate->rowHeight(), NULL);
-	//LineTo(hdc, right, delegate->rowHeight());
-
+	
 	int j = 0;
 	int left = 0;
 
 	MoveToEx(hdc, 0, 0, NULL);
 	LineTo(hdc, 0, delegate->rowHeight());
+
+	MoveToEx(hdc, 0, delegate->rowHeight(), NULL);
+	LineTo(hdc, right, delegate->rowHeight());
+
 
 	for(int l=0; l<numColumns; l++){
 		GridColumn* col = columns[l];
@@ -450,7 +451,7 @@ void CinchGrid::DrawVerticalGridlines(HDC hdc, RECT client)
 
 		for(int i=0; i<numColumns; i++){
 			GridColumn* col = columns[i];
-			MoveToEx(hdc, left + col->getWidth()-1, client.top+delegate->rowHeight(), NULL);
+			MoveToEx(hdc, left + col->getWidth()-1, client.top+delegate->rowHeight()+1, NULL);
 			LineTo(hdc, left + col->getWidth()-1, bottom + windowOffsetY );
 			left += col->getWidth();
 		}
@@ -792,7 +793,6 @@ LRESULT CinchGrid::OnLButtonDown(WPARAM wParam, LPARAM lParam){
 					sortedColumn = clickedColumn;
 					reloadData();
 				}
-				InvalidateRect(hWnd, NULL, true);
 			} else {
 				columns[clickedColumn]->sorted = true;
 				columns[clickedColumn]->descending = false;

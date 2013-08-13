@@ -51,7 +51,7 @@ void ReferenceDelegate::headerContent(int col, wstring &content) {
 }
 
 bool ReferenceDelegate::stickyHeaders(){
-	return false;
+	return true;
 }
 
 
