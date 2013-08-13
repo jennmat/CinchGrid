@@ -8,6 +8,8 @@ GridColumn::GridColumn(wstring header, int width){
 	this->header = header;
 	this->width = width;
 	this->editor = NULL;
+	this->sorted = false;
+	this->descending = false;
 }
 
 GridColumn::~GridColumn(){

@@ -40,6 +40,11 @@ public:
 	virtual void editingFinished(HWND editor, int row, int col) = 0;
 	virtual void willLoseFocus()=0;
 
+	virtual bool allowSorting(int col)=0;
+	virtual void sortAscending(int col)=0;
+	virtual void sortDescending(int col)=0;
+	virtual void sortOff(int col)=0;
+
 	virtual bool allowNewRows() = 0;
 	virtual bool allowNewColumns() = 0;
 	virtual void prepareNewRow(int row) = 0;
@@ -59,6 +64,7 @@ class ReferenceDelegate : public GridDelegate {
 private:
 	int rowCount;
 	int columnCount;
+	int sorts[MAX_COLUMNS];
 	wchar_t* data[MAX_ROWS][MAX_COLUMNS];
 public:
 	ReferenceDelegate();
@@ -92,6 +98,11 @@ public:
 	HWND editorForColumn(int, HWND parent, HINSTANCE hInst) ;
 	void editingFinished(HWND editor, int row, int col);
 	void willLoseFocus();
+
+	bool allowSorting(int col);
+	void sortAscending(int col);
+	void sortDescending(int col);
+	void sortOff(int col);
 
 	bool allowNewRows();
 	bool allowNewColumns();

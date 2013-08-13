@@ -45,6 +45,8 @@ HWND CinchGrid::CreateCinchGrid(HWND parent, GridDelegate* delegate)
 		parent,
 		NULL, GetModuleHandle(0), delegate);
 
+
+	
 	return hWnd;
 }
 
@@ -68,6 +70,8 @@ CinchGrid::CinchGrid(HWND h, HINSTANCE inst, GridDelegate * d){
 
 	windowOffsetY = 0;
 
+	sortedColumn = -1;
+
 	overflowX = false;
 	overflowY = false;
 
@@ -84,17 +88,21 @@ CinchGrid::CinchGrid(HWND h, HINSTANCE inst, GridDelegate * d){
 
 	initialize();
 
+  
 	headerPen = CreatePen(PS_SOLID, 1, RGB(137, 140, 149));
 	gridlinesPen = CreatePen(PS_SOLID, 1, RGB(205, 205, 205));
 	borderlinesPen = CreatePen(PS_SOLID, 1, RGB(137, 140, 149));
+	sortIndicatorPen = CreatePen(PS_SOLID, 1, RGB(165,172,181));
+	
+	
 	solidWhiteBrush = CreateSolidBrush(RGB(255,255,255));
 	activeRowBrush = CreateSolidBrush(RGB(167,205,240));
-		
+	sortIndicatorBrush = CreateSolidBrush(RGB(165,172,181));
+
 	offscreenDC = CreateCompatibleDC(GetDC(hWnd));
 }
 
-void CinchGrid::initialize(){
-
+void CinchGrid::setupColumns(){
 	for(int i=0; i<numColumns; i++){
 		delete columns[i];
 		columns[i] = NULL;
@@ -110,6 +118,14 @@ void CinchGrid::initialize(){
 		totalWidth += delegate->columnWidth(i);
 	}
 
+}
+
+void CinchGrid::initialize(){
+	
+	if ( numColumns == 0 ){
+		setupColumns();
+	}
+	
 	totalHeight = (delegate->totalRows()) * delegate->rowHeight();
 	
 	RECT client;
@@ -169,13 +185,6 @@ void CinchGrid::reloadData(){
 
 }
 
-void CinchGrid::clearColumns(){
-	for(int i=0; i<numColumns; i++){
-		columns[i] = NULL;
-	}
-
-	numColumns = 0;
-}
 
 void CinchGrid::addColumn(wstring header, int width) {
 	columns[numColumns] = new GridColumn(header, width);
@@ -359,10 +368,58 @@ void CinchGrid::DrawHeader(HDC hdc, RECT client, bool fromPaintRoutine){
 		int width = col->getWidth();
 		//Rectangle(hdc, i, 0, i + COL_SPACING, delegate->rowHeight());
 		DrawColumnHeader(hdc, left, width, delegate->rowHeight(), (LPWSTR)col->getHeader().c_str());
+	
+		if ( col->sorted == true ){
+			POINT points[3];
+				
+			if ( col->descending == true ){
+				LONG sx = left+width-15;
+				LONG sy = 14;
+			
+				LONG d = 4;
+
+				points[0].x = sx;
+				points[0].y = sy;
+
+				points[1].x = sx+d;
+				points[1].y = sy-d;
+
+				points[2].x = sx-d;
+				points[2].y = sy-d;
+			
+			} else {
+				LONG sx = left+width-15;
+				LONG sy = 10;
+			
+				LONG d = 4;
+
+				
+				points[0].x = sx;
+				points[0].y = sy;
+
+				points[1].x = sx+d;
+				points[1].y = sy+d;
+
+				points[2].x = sx-d;
+				points[2].y = sy+d;
+			
+
+			}
+
+			SelectObject(hdc, sortIndicatorPen);
+			SelectObject(hdc, sortIndicatorBrush);
+			
+				
+			Polygon(hdc, points, 3);
+
+			SelectObject(hdc, headerPen);
+		}
+		
 		left += width;
 
 		j++;
 	}
+
 	if( delegate->allowNewColumns() ){
 		while (left < offscreenWidth ){
 			DrawColumnHeader(hdc, left, DEFAULT_COLUMN_WIDTH, delegate->rowHeight(), L"");
@@ -705,7 +762,7 @@ LRESULT CinchGrid::OnLButtonDown(WPARAM wParam, LPARAM lParam){
 
 	if ( yPos < delegate->rowHeight() ){
 		int accum = 0;
-		int activeCol = 0;
+		int clickedColumn = 0;
 		for(int i=0; i<numColumns; i++){
 			accum += columns[i]->getWidth();
 			if ( abs(accum-xPos) < 10 ){
@@ -713,12 +770,40 @@ LRESULT CinchGrid::OnLButtonDown(WPARAM wParam, LPARAM lParam){
 				activelyDraggedColumn = i;
 			}
 			if ( accum > xPos ){
-				activeCol = i;
+				clickedColumn = i;
 				break;
 			}
 		}
+
+		if ( delegate->allowSorting(clickedColumn) == true ){
+			if ( sortedColumn >= 0 && sortedColumn != clickedColumn ){
+				delegate->sortOff(sortedColumn);
+				columns[sortedColumn]->sorted = false;
+			}
+			if ( columns[clickedColumn]->sorted == true ){
+				if ( columns[clickedColumn]->descending == true ){
+					columns[clickedColumn]->descending = false;
+					delegate->sortAscending(clickedColumn);
+					sortedColumn = clickedColumn;
+					reloadData();
+				} else {
+					columns[clickedColumn]->descending = true;
+					delegate->sortDescending(clickedColumn);
+					sortedColumn = clickedColumn;
+					reloadData();
+				}
+				InvalidateRect(hWnd, NULL, true);
+			} else {
+				columns[clickedColumn]->sorted = true;
+				columns[clickedColumn]->descending = false;
+				delegate->sortAscending(clickedColumn);
+				sortedColumn = clickedColumn;
+				reloadData();
+			}
+		}	
+
 		if ( !draggingHeader ) {
-			if ( delegate->allowHeaderTitleEditing(activeCol) ){
+			if ( delegate->allowHeaderTitleEditing(clickedColumn) ){
 				startHeaderTitleEditing(activeCol);
 				InvalidateRect(hWnd, NULL, true);
 			}
@@ -1500,7 +1585,7 @@ void CinchGrid::SetActiveRow(int row, bool silent){
 void CinchGrid::setDelegate(GridDelegate* d){
 	delegate = d;
 	stopEditing(); 
-	clearColumns();
+	setupColumns();
 	initialize();
 }
 

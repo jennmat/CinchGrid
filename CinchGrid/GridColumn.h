@@ -11,6 +11,10 @@ private:
 public:
 	GridColumn(wstring, int);
 	~GridColumn();
+	
+	bool sorted;
+	bool descending;
+	
 	int getWidth();
 	void setWidth(int);
 	wstring getHeader();

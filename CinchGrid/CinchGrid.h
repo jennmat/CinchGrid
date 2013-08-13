@@ -34,6 +34,8 @@ private:
 	int activelyEditingRow;
 	int activeCol;// = -1;
 
+	int sortedColumn;
+
 	int scrollOffsetX;// = 0;
 	int scrollOffsetY;// = 0;
 
@@ -59,9 +61,11 @@ private:
 	HPEN headerPen;
 	HPEN gridlinesPen;
 	HPEN borderlinesPen;
+	HPEN sortIndicatorPen;
 
 	HBRUSH solidWhiteBrush;
 	HBRUSH activeRowBrush;
+	HBRUSH sortIndicatorBrush;
 
 	HDC offscreenDC;
 	HBITMAP offscreenBitmap;
@@ -75,10 +79,10 @@ private:
 	/* Move to the previous row when the tab hits this control */
 	HWND reverseTabCapture;
 
-	void clearColumns();
 	void addColumn(wstring header, int width);
 
 	void initialize();
+	void setupColumns();
 
 	/*Editing */
 	void startEditing(int previous, int row, int col);

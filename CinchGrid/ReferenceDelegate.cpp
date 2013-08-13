@@ -3,11 +3,17 @@
 #include <string.h>
 #include <sstream>
 
+#define NOSORT 0
+#define ASCENDING 1
+#define DESCENDING 2
+
 ReferenceDelegate::ReferenceDelegate(){
 	int i,j;
 	rowCount = 100;
-	columnCount = 1;
-
+	columnCount = 2;
+	for(i=0;i<columnCount;i++){
+		sorts[i] = NOSORT;
+	}
 	for(i=0;i<MAX_ROWS;i++){
 		for(j=0; j<MAX_COLUMNS; j++){
 			data[i][j]=NULL;
@@ -38,12 +44,14 @@ void ReferenceDelegate::headerContent(int col, wstring &content) {
 		//return TEXT("Date");
 	//}
 	//return TEXT("Text");
-	
-	content = L"TEST";
+	if ( col == 0 )
+		content = L"Numbers";
+	else 
+		content = L"Letters";
 }
 
 bool ReferenceDelegate::stickyHeaders(){
-	return true;
+	return false;
 }
 
 
@@ -52,10 +60,30 @@ void ReferenceDelegate::cellContent(int row, int col, wstring& content) {
 	//if( data[row][col] != NULL ){
 	//	return data[row][col];
 	//}
-	
-	//if ( col == 0 ){
 	wstringstream s;
-	s << row;
+	
+	bool ascending = false;
+	bool descending = false;
+	if ( sorts[1] == ASCENDING || sorts[0] == ASCENDING) {
+		ascending = true;
+	} else if ( sorts[0] == DESCENDING || sorts[1] == DESCENDING) {
+		descending = true;
+	}
+
+	if ( col == 0 ){
+		if ( descending == true ){
+			s << rowCount - 1 - row;
+		} else {
+			s << row;
+		}
+	} else {
+		if ( descending == true ){
+			s << (char)((rowCount-1-row)%26+65);
+		} else {
+			s << (char)(row%26+65);
+		}
+	}
+
 	content = s.str();
 //	}
 
@@ -67,12 +95,12 @@ void ReferenceDelegate::cellContent(int row, int col, wstring& content) {
 }
 
 HFONT ReferenceDelegate::getFont(){
-	HFONT hFont=CreateFont(17,0,0,0,0,0,0,0,0,0,0,0,0,TEXT("MS Shell Dlg"));
+	HFONT hFont=CreateFont(-12,0,0,0,400,0,0,0,1,0,0,0,0,TEXT("Segoe UI"));
 	return hFont;
 }
 
 HFONT ReferenceDelegate::getEditFont(){
-	HFONT hFont=CreateFont(18,0,0,0,0,0,0,0,0,0,0,0,0,TEXT("MS Shell Dlg"));
+	HFONT hFont=CreateFont(-12,0,0,0,400,0,0,0,1,0,0,0,0,TEXT("Segoe UI"));
 	return hFont;
 }
 
@@ -97,11 +125,23 @@ bool ReferenceDelegate::allowEditing(int col){
 	return false;
 }
 
+void ReferenceDelegate::sortAscending(int col){
+	sorts[col] = ASCENDING;
+}
+
+void ReferenceDelegate::sortDescending(int col){
+	sorts[col] = DESCENDING;
+}
+
+void ReferenceDelegate::sortOff(int col){
+	sorts[col] = NOSORT;
+}
+
 void ReferenceDelegate::willLoseFocus(){
 }
 
 bool ReferenceDelegate::allowHeaderTitleEditing(int col){
-	return true;
+	return false;
 }
 
 HWND CreateComboBox(HWND parent, HINSTANCE hInst){
@@ -159,6 +199,10 @@ void ReferenceDelegate::editingFinished(HWND editor, int row, int col)
 	data[row][col] = (wchar_t *)malloc(100*sizeof(TCHAR));
 	GetWindowText(editor, data[row][col], 100);
 
+}
+
+bool ReferenceDelegate::allowSorting(int col){
+	return true;
 }
 
 bool ReferenceDelegate::allowNewRows() {

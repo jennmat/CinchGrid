@@ -17,7 +17,6 @@
 #include <memory.h>
 #include <tchar.h>
 
-
 #include <CommCtrl.h>
 
 #include "GridColumn.h"
