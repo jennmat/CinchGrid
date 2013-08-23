@@ -47,8 +47,17 @@ private:
 	bool overflowX;// = 0;
 	bool overflowY;// = 0;
 
+	/* Width of the grid content */
 	int totalWidth;// = 0;
 	int totalHeight;// = 0;
+
+	/*Width of the window we are living in*/
+	int clientWidth;
+
+	/* True if at least one column is autosized (i.e. set to max width)*/
+	bool autosized;
+	int numAutosizedCols;
+	int totalWidthFixedCols;
 
 	bool draggingHeader;// = false;
 	bool editingInitialized;// = false;

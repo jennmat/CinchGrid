@@ -6,6 +6,8 @@ using namespace std;
 
 class CinchGrid;
 
+#define CINCH_GRID_MAXIMIZE_WIDTH -1
+
 class GridDelegate
 {
 public:

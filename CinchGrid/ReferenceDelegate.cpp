@@ -33,7 +33,8 @@ int ReferenceDelegate::columnWidth(int column){
 	//if ( column == 0 ){
 	//	return 25;
 	//
-	return 125;
+	return CINCH_GRID_MAXIMIZE_WIDTH;
+	//return column == 0 ? 250 : CINCH_GRID_MAXIMIZE_WIDTH;
 }
 
 

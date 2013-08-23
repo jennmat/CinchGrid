@@ -110,27 +110,45 @@ void CinchGrid::setupColumns(){
 
 	numColumns = 0;
 	totalWidth = 0;
+	numAutosizedCols = 0;
+	totalWidthFixedCols = 0;
+
+	for(int i=0; i<delegate->totalColumns(); i++){
+		if ( delegate->columnWidth(i) == CINCH_GRID_MAXIMIZE_WIDTH ){
+			autosized = true;
+			numAutosizedCols++;	
+		}
+	}
 
 	for(int i=0; i<delegate->totalColumns(); i++){
 		wstring headerContent;
 		delegate->headerContent(i, headerContent);
-		addColumn(headerContent, delegate->columnWidth(i));
-		totalWidth += delegate->columnWidth(i);
+		int width = delegate->columnWidth(i);
+
+		addColumn(headerContent, width);
+		if ( !autosized ) totalWidth += width;
+		
+		if ( width != CINCH_GRID_MAXIMIZE_WIDTH ){
+			totalWidthFixedCols += width;
+		}
 	}
 
 }
 
 void CinchGrid::initialize(){
 	
+	RECT client;
+	GetClientRect(hWnd, &client);
+	
+	clientWidth = client.right;
+
 	if ( numColumns == 0 ){
 		setupColumns();
 	}
 	
 	totalHeight = (delegate->totalRows()) * delegate->rowHeight();
 	
-	RECT client;
-	GetClientRect(hWnd, &client);
-
+	
 	overflowY = false;
 	
 	overflowX = false;
@@ -346,11 +364,13 @@ void CinchGrid::DrawHeader(HDC hdc, RECT client, bool fromPaintRoutine){
 	SelectObject(hdc, hFont);
 	
 
-	SelectObject(hdc, headerPen);	
-	int right = totalArea.right;
+	SelectObject(hdc, headerPen);
+	int right;
+	if ( autosized ) right = clientWidth;
+	else right = totalArea.right;
 	
 	MoveToEx(hdc, 0, 0, NULL);
-	if ( !delegate->allowNewColumns() ){
+	if ( !delegate->allowNewColumns() && !autosized){
 		right = totalWidth;
 	}
 	
@@ -367,6 +387,9 @@ void CinchGrid::DrawHeader(HDC hdc, RECT client, bool fromPaintRoutine){
 	for(int l=0; l<numColumns; l++){
 		GridColumn* col = columns[l];
 		int width = col->getWidth();
+		if ( width == CINCH_GRID_MAXIMIZE_WIDTH ){
+			width = ( clientWidth - totalWidthFixedCols ) / numAutosizedCols;
+		}
 		//Rectangle(hdc, i, 0, i + COL_SPACING, delegate->rowHeight());
 		DrawColumnHeader(hdc, left, width, delegate->rowHeight(), (LPWSTR)col->getHeader().c_str());
 	
@@ -451,9 +474,11 @@ void CinchGrid::DrawVerticalGridlines(HDC hdc, RECT client)
 
 		for(int i=0; i<numColumns; i++){
 			GridColumn* col = columns[i];
-			MoveToEx(hdc, left + col->getWidth()-1, client.top+delegate->rowHeight()+1, NULL);
-			LineTo(hdc, left + col->getWidth()-1, bottom + windowOffsetY );
-			left += col->getWidth();
+			int width = col->getWidth();
+			if ( width == CINCH_GRID_MAXIMIZE_WIDTH ) width = clientWidth;
+			MoveToEx(hdc, left + width-1, client.top+delegate->rowHeight()+1, NULL);
+			LineTo(hdc, left + width-1, bottom + windowOffsetY );
+			left += width;
 		}
 		if ( delegate->allowNewColumns() ){
 			while ( left < offscreenWidth ){
@@ -484,7 +509,7 @@ void CinchGrid::DrawHorizontalGridlines(HDC hdc, RECT client)
 		if (  delegate->allowNewRows() == false ){
 			bottom = bottom+1;
 		}
-		int width = totalWidth;
+		int width = clientWidth;
 		if( delegate->allowNewColumns() ){
 			width = offscreenWidth;
 		}
@@ -521,10 +546,14 @@ void CinchGrid::DrawTextForRow(HDC hdc, RECT client, int row){
 		GridColumn* c = columns[col];
 		RECT textRect;
 		textRect.left = left+LEFT_MARGIN;
-		textRect.right = left + c->getWidth()-1;
+		int width = c->getWidth();
+		if ( width == CINCH_GRID_MAXIMIZE_WIDTH ){
+			width = ( clientWidth - totalWidthFixedCols ) / numAutosizedCols;
+		}
+		textRect.right = left + width-1;
 		textRect.top = top+1;
 		textRect.bottom = top + delegate->rowHeight()-2;
-		left += c->getWidth();
+		left += width;
 		if ( row == activeRow - 1 && delegate->rowSelection() == true ){
 			FillRect(hdc, &textRect, activeRowBrush); 
 		} else {
@@ -543,7 +572,8 @@ void CinchGrid::ClearActiveRow(int row, HDC hdc, RECT client)
 {
 	RECT rect;
 	rect.left = 0;
-	rect.right = totalWidth;
+	if ( autosized ) rect.right = clientWidth;
+	else  rect.right = totalWidth;
 	rect.top = (row) * delegate->rowHeight() ;
 	rect.bottom = rect.top + delegate->rowHeight()+1;
 	FillRect(hdc, &rect, solidWhiteBrush);
@@ -571,7 +601,8 @@ void CinchGrid::DrawActiveRow(HDC hdc, RECT client)
 		SelectObject(hdc,GetStockObject(NULL_BRUSH));
 		RECT row;
 		row.left = 0;
-		row.right = totalWidth;
+		if ( autosized ) row.right = clientWidth;
+		else  row.right = totalWidth;
 		row.top = activeRow * delegate->rowHeight();
 		row.bottom = row.top + delegate->rowHeight()+1;
 		FillRect(hdc, &row, activeRowBrush);
@@ -765,7 +796,11 @@ LRESULT CinchGrid::OnLButtonDown(WPARAM wParam, LPARAM lParam){
 		int accum = 0;
 		int clickedColumn = 0;
 		for(int i=0; i<numColumns; i++){
-			accum += columns[i]->getWidth();
+			int width = columns[i]->getWidth();
+			if ( width == CINCH_GRID_MAXIMIZE_WIDTH ){
+				width = ( clientWidth - totalWidthFixedCols ) / numAutosizedCols;
+			}
+			accum += width;
 			if ( abs(accum-xPos) < 10 ){
 				draggingHeader = true;
 				activelyDraggedColumn = i;
@@ -896,6 +931,8 @@ LRESULT CinchGrid::OnSize(WPARAM wParam, LPARAM lParam){
 	RECT client;
 	GetClientRect(hWnd, &client);
 		
+	clientWidth = client.right;
+
 	SetupAndDrawOffscreenBitmap();
 	InvalidateRect(hWnd, NULL, true);
 
@@ -1530,6 +1567,7 @@ void CinchGrid::scrollEditors(int offsetX, int offsetY){
 
 void CinchGrid::DrawGridElements(HDC hdc, RECT client)
 {
+	clientWidth = client.right;
 	FillRect(offscreenDC, &totalArea, solidWhiteBrush);
 
 	DrawHorizontalGridlines(hdc, client);
