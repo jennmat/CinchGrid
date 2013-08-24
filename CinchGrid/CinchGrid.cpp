@@ -112,6 +112,7 @@ void CinchGrid::setupColumns(){
 	totalWidth = 0;
 	numAutosizedCols = 0;
 	totalWidthFixedCols = 0;
+	autosized = false;
 
 	for(int i=0; i<delegate->totalColumns(); i++){
 		if ( delegate->columnWidth(i) == CINCH_GRID_MAXIMIZE_WIDTH ){
@@ -509,7 +510,10 @@ void CinchGrid::DrawHorizontalGridlines(HDC hdc, RECT client)
 		if (  delegate->allowNewRows() == false ){
 			bottom = bottom+1;
 		}
-		int width = clientWidth;
+		int width = totalWidth;
+		if ( autosized == true ){
+			width = clientWidth;
+		}
 		if( delegate->allowNewColumns() ){
 			width = offscreenWidth;
 		}
