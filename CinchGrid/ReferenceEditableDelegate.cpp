@@ -48,12 +48,11 @@ bool ReferenceEditableDelegate::stickyHeaders(){
 	return false;
 }
 
-void ReferenceEditableDelegate::cellContent(int row, int col, const wchar_t* &content) {
-	if( data[row][col] != NULL ){
-		int len = wcslen(data[row][col]);
-		content = new wchar_t[len];
-		wcscpy_s((wchar_t*)content, len+1, data[row][col]);
-	}
+
+void ReferenceEditableDelegate::LoadSegment(int start_row, int len, wchar_t*** data){
+}
+
+void ReferenceEditableDelegate::CleanupSegment(int len, wchar_t*** data){
 }
 
 HFONT ReferenceEditableDelegate::getFont(){

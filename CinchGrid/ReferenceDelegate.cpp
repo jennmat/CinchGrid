@@ -57,13 +57,10 @@ bool ReferenceDelegate::stickyHeaders(){
 }
 
 
-void ReferenceDelegate::cellContent(int row, int col, wstring& content) {
-	
-	//if( data[row][col] != NULL ){
-	//	return data[row][col];
-	//}
-	wstringstream s;
-	
+
+
+void ReferenceDelegate::LoadSegment(int start_row, int len, wchar_t*** data){
+
 	bool ascending = false;
 	bool descending = false;
 	if ( sorts[1] == ASCENDING || sorts[0] == ASCENDING) {
@@ -72,28 +69,39 @@ void ReferenceDelegate::cellContent(int row, int col, wstring& content) {
 		descending = true;
 	}
 
-	if ( col == 0 ){
-		if ( descending == true ){
-			s << rowCount - 1 - row;
-		} else {
-			s << row;
-		}
-	} else {
-		if ( descending == true ){
-			s << (char)((rowCount-1-row)%26+65);
-		} else {
-			s << (char)(row%26+65);
+	int row = start_row;
+	for(int i=0; i<len; i++){
+		for(int col=0; col<columnCount; col++){
+			wstringstream s;
+			if ( col == 0 ){
+				if ( descending == true ){
+					s << rowCount - 1 - row;
+				} else {
+					s << row;
+				}
+			} else {
+				if ( descending == true ){
+					s << (char)((rowCount-1-row)%26+65);
+				} else {
+					s << (char)(row%26+65);
+				}
+			}
+			
+			wstring str = s.str();
+			const wchar_t* t = str.c_str();
+			data[i][col] = new wchar_t[20];
+			wcscpy_s(data[i][col], 20, t);
+}
+		row++;
+	}
+}
+
+void ReferenceDelegate::CleanupSegment(int len, wchar_t*** data){
+	for(int i=0; i<len; i++){
+		for(int col=0; col<columnCount; col++){
+			delete data[i][col];
 		}
 	}
-
-	content = s.str();
-//	}
-
-	//if( col == 1 ){
-	//		return TEXT("");
-	//	}
-	//return TEXT("Random Text");
-	//return TEXT("");
 }
 
 HFONT ReferenceDelegate::getFont(){

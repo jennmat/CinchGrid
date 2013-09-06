@@ -18,12 +18,18 @@
 
 #define CINCHGRID_ROW_SELECTED (WM_APP + 0x0102)
 
+#define PAGESIZE 200
+
 class CinchGrid {
 private:
 	
 	int numColumns;
+	int numRows;
 	GridColumn* columns[MAX_GRID_COLUMNS];
 	GridDelegate* delegate;
+
+	wchar_t ***data;
+	int* page_table;
 
 	HWND hWnd;
 	HINSTANCE hInst;
@@ -91,6 +97,7 @@ private:
 	void addColumn(wstring header, int width);
 
 	void initialize();
+	void CleanupData();
 	void setupColumns();
 
 	/*Editing */
@@ -134,6 +141,7 @@ private:
 	LRESULT OnVScroll(WPARAM wParam, LPARAM lParam);
 	LRESULT OnHScroll(WPARAM wParam, LPARAM lParam);
 	LRESULT OnMouseWheel(WPARAM wParam, LPARAM lParam);
+
 
 public:
 	static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);

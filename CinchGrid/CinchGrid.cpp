@@ -86,6 +86,9 @@ CinchGrid::CinchGrid(HWND h, HINSTANCE inst, GridDelegate * d){
 
 	delegate = d;
 
+	data = nullptr;
+	page_table = nullptr;
+
 	initialize();
 
   
@@ -133,7 +136,6 @@ void CinchGrid::setupColumns(){
 			totalWidthFixedCols += width;
 		}
 	}
-
 }
 
 void CinchGrid::initialize(){
@@ -147,6 +149,8 @@ void CinchGrid::initialize(){
 		setupColumns();
 	}
 	
+	numRows = delegate->totalRows();
+
 	totalHeight = (delegate->totalRows()) * delegate->rowHeight();
 	
 	
@@ -166,14 +170,39 @@ void CinchGrid::initialize(){
 		GridColumn* col = columns[i];
 		left += col->getWidth();
 	}
-		 
 	
+	if ( data != nullptr ){
+		CleanupData();
+	}
+
+	data = new wchar_t**[PAGESIZE];
+	for(int i=0; i<PAGESIZE; i++){
+		data[i] = new wchar_t*[numColumns];
+		memset(data[i], 0, numColumns*sizeof(wchar_t*));
+	}
+	page_table = new int[PAGESIZE];
+	memset(page_table, 0xffff, PAGESIZE);
+}
+
+void CinchGrid::CleanupData(){
+	delegate->CleanupSegment(PAGESIZE, data);
+
+	for(int i=0; i<PAGESIZE; i++){
+		delete data[i];
+	}
+	delete data;
+	delete page_table;
+	
+	data = nullptr;
+	page_table = nullptr;
 }
 
 CinchGrid::~CinchGrid(){
 	for(int i=0; i<numColumns; i++){
 		delete columns[i];
 	}
+
+	CleanupData();
 }
 
 void CinchGrid::reloadData(){
@@ -564,11 +593,23 @@ void CinchGrid::DrawTextForRow(HDC hdc, RECT client, int row){
 			FillRect(hdc, &textRect, solidWhiteBrush); 
 		}
 
-		wstring content;
-		delegate->cellContent(row, col, content);
+		//wstring content;
+		//delegate->cellContent(row, col, content);
+		
+		int len = PAGESIZE;
+		if ( numRows < PAGESIZE ){
+			len = numRows;
+		}
 
-		int rc = DrawText(hdc, content.c_str(), -1, &textRect, DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS | DT_NOPREFIX);
-	
+		if ( page_table[row % PAGESIZE] != row ){
+			delegate->CleanupSegment(len, data);
+			delegate->LoadSegment(row, len, data);
+			for(int i=row; i<row+PAGESIZE; i++){
+				page_table[i%PAGESIZE] = i+row;
+			}
+		}
+
+		int rc = DrawText(hdc, data[row%PAGESIZE][col], -1, &textRect, DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS | DT_NOPREFIX);
 	}
 }
 
