@@ -49,7 +49,8 @@ bool ReferenceEditableDelegate::stickyHeaders(){
 }
 
 
-void ReferenceEditableDelegate::LoadSegment(int start_row, int len, wchar_t*** data){
+int ReferenceEditableDelegate::LoadSegment(int start_row, int len, wchar_t*** data){
+	return 0;
 }
 
 void ReferenceEditableDelegate::CleanupSegment(int len, wchar_t*** data){

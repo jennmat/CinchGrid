@@ -88,6 +88,7 @@ CinchGrid::CinchGrid(HWND h, HINSTANCE inst, GridDelegate * d){
 
 	data = nullptr;
 	page_table = nullptr;
+	rows_loaded = 0;
 
 	initialize();
 
@@ -145,6 +146,11 @@ void CinchGrid::initialize(){
 	
 	clientWidth = client.right;
 
+	if ( data != nullptr ){
+		CleanupData();
+	}
+
+
 	if ( numColumns == 0 ){
 		setupColumns();
 	}
@@ -171,10 +177,7 @@ void CinchGrid::initialize(){
 		left += col->getWidth();
 	}
 	
-	if ( data != nullptr ){
-		CleanupData();
-	}
-
+	
 	data = new wchar_t**[PAGESIZE];
 	for(int i=0; i<PAGESIZE; i++){
 		data[i] = new wchar_t*[numColumns];
@@ -185,7 +188,9 @@ void CinchGrid::initialize(){
 }
 
 void CinchGrid::CleanupData(){
-	delegate->CleanupSegment(PAGESIZE, data);
+	if ( data != nullptr ){
+		delegate->CleanupSegment(rows_loaded, data);
+	}
 
 	for(int i=0; i<PAGESIZE; i++){
 		delete data[i];
@@ -602,8 +607,10 @@ void CinchGrid::DrawTextForRow(HDC hdc, RECT client, int row){
 		}
 
 		if ( page_table[row % PAGESIZE] != row ){
-			delegate->CleanupSegment(len, data);
-			delegate->LoadSegment(row, len, data);
+			if ( data != nullptr ){
+				delegate->CleanupSegment(rows_loaded, data);
+			}
+			rows_loaded = delegate->LoadSegment(row, len, data);
 			for(int i=row; i<row+PAGESIZE; i++){
 				page_table[i%PAGESIZE] = i+row;
 			}

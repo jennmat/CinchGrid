@@ -59,7 +59,7 @@ bool ReferenceDelegate::stickyHeaders(){
 
 
 
-void ReferenceDelegate::LoadSegment(int start_row, int len, wchar_t*** data){
+int ReferenceDelegate::LoadSegment(int start_row, int len, wchar_t*** data){
 
 	bool ascending = false;
 	bool descending = false;
@@ -91,9 +91,10 @@ void ReferenceDelegate::LoadSegment(int start_row, int len, wchar_t*** data){
 			const wchar_t* t = str.c_str();
 			data[i][col] = new wchar_t[20];
 			wcscpy_s(data[i][col], 20, t);
-}
+		}
 		row++;
 	}
+	return len;
 }
 
 void ReferenceDelegate::CleanupSegment(int len, wchar_t*** data){
