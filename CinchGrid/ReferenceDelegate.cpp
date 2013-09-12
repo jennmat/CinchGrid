@@ -8,16 +8,10 @@
 #define DESCENDING 2
 
 ReferenceDelegate::ReferenceDelegate(){
-	int i,j;
 	rowCount = 100;
 	columnCount = 2;
-	for(i=0;i<columnCount;i++){
+	for(int i=0;i<columnCount;i++){
 		sorts[i] = NOSORT;
-	}
-	for(i=0;i<MAX_ROWS;i++){
-		for(j=0; j<MAX_COLUMNS; j++){
-			data[i][j]=NULL;
-		}
 	}
 }
 
@@ -205,7 +199,7 @@ HWND ReferenceDelegate::editorForColumn(int col, HWND parent, HINSTANCE hInst){
 	
 }
 
-void ReferenceDelegate::editingFinished(HWND editor, int row, int col)
+void ReferenceDelegate::editingFinished(HWND editor, int row, int col, wchar_t*** data)
 {
 	data[row][col] = (wchar_t *)malloc(100*sizeof(TCHAR));
 	GetWindowText(editor, data[row][col], 100);
@@ -226,13 +220,9 @@ bool ReferenceDelegate::allowNewColumns() {
 
 void ReferenceDelegate::prepareNewRow(int row){
 	rowCount++;
-	data[row][0] = NULL;
-	data[row][1] = TEXT("");
-	data[row][2] = TEXT("");
 }
 
 void ReferenceDelegate::setupEditorForCell(HWND editor, int row, int col){
-	SendMessage(editor, WM_SETTEXT, (WPARAM)0, (LPARAM)data[row][col]);
 }
 
 void ReferenceDelegate::headerContextClick(HWND grid, int x, int y){

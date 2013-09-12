@@ -97,7 +97,8 @@ CinchGrid::CinchGrid(HWND h, HINSTANCE inst, GridDelegate * d){
 	gridlinesPen = CreatePen(PS_SOLID, 1, RGB(205, 205, 205));
 	borderlinesPen = CreatePen(PS_SOLID, 1, RGB(137, 140, 149));
 	sortIndicatorPen = CreatePen(PS_SOLID, 1, RGB(165,172,181));
-	
+	LOGBRUSH lb = {BS_SOLID, RGB(100, 100, 100), 0}; 
+	activeCellPen = ExtCreatePen(PS_COSMETIC | PS_ALTERNATE | PS_ENDCAP_SQUARE | PS_JOIN_ROUND, 1, &lb, 0, NULL);
 	
 	solidWhiteBrush = CreateSolidBrush(RGB(255,255,255));
 	activeRowBrush = CreateSolidBrush(RGB(167,205,240));
@@ -219,7 +220,7 @@ void CinchGrid::reloadData(){
 		for(int i=0; i<numColumns; i++){
 			if( delegate->allowEditing(i) ){
 				if ( columns[i]->getEditor() != NULL ){
-					delegate->setupEditorForCell(columns[i]->getEditor(), activelyEditingRow, i);
+					delegate->setupEditorForCell(columns[i]->getEditor(), activelyEditingRow, i, data);
 				}
 			}
 		}
@@ -646,9 +647,6 @@ void CinchGrid::DrawActiveRow(HDC hdc, RECT client)
 	}
 	if ( activeRow >= 1){
 			
-		LOGBRUSH lb = {BS_SOLID, RGB(100, 100, 100), 0}; 
-		HPEN activeCellPen = ExtCreatePen(PS_COSMETIC | PS_ALTERNATE | PS_ENDCAP_SQUARE | PS_JOIN_ROUND, 1, &lb, 0, NULL);
-
 		SelectObject(hdc, activeCellPen);
 		SelectObject(hdc,GetStockObject(NULL_BRUSH));
 		RECT row;
@@ -1233,6 +1231,19 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		return TRUE;
 		}
 		break;
+	case WM_DESTROY:
+		DeleteObject(grid->activeRowBrush);
+		DeleteObject(grid->headerPen);
+		DeleteObject(grid->gridlinesPen);
+		DeleteObject(grid->borderlinesPen);
+		DeleteObject(grid->sortIndicatorPen);
+		DeleteObject(grid->activeCellPen);
+		DeleteObject(grid->solidWhiteBrush);
+		DeleteObject(grid->activeRowBrush);
+		DeleteObject(grid->sortIndicatorBrush);
+		DeleteObject(grid->offscreenDC);
+		DeleteObject(grid->offscreenBitmap);
+		break;
 	case WM_NCDESTROY:
 		delete grid;
 		break;
@@ -1387,8 +1398,10 @@ LRESULT CALLBACK CinchGrid::DetailWndProc(HWND hWnd, UINT message, WPARAM wParam
 		}
 		if ( wParam == VK_RETURN ){
 			int previous = self->activeRow;
-			self->delegate->editingFinished(hWnd, previous-1, uIdSubclass);
-			
+			self->delegate->editingFinished(hWnd, previous-1, uIdSubclass, self->data);
+			self->rows_loaded = max(self->rows_loaded, previous);
+			self->page_table[previous-1 % PAGESIZE] = previous-1;
+
 			self->activeRow++;
 			if ( self->activeRow > self->delegate->totalRows() ){
 				if ( self->delegate->allowNewRows() ) {
@@ -1416,8 +1429,13 @@ LRESULT CALLBACK CinchGrid::DetailWndProc(HWND hWnd, UINT message, WPARAM wParam
 		if ( uIdSubclass == HEADER_EDITOR ){
 			self->stopHeaderTitleEditing();
 		} else {
-			self->delegate->editingFinished(hWnd, self->activelyEditingRow, uIdSubclass);
+			if ( uIdSubclass != TAB_CAPTURE_CLASS && uIdSubclass != REVERSE_TAB_CAPTURE_CLASS ){
+				self->delegate->editingFinished(hWnd, self->activelyEditingRow, uIdSubclass, self->data);
+				self->rows_loaded = max(self->rows_loaded, self->activelyEditingRow+1);
+				self->page_table[self->activelyEditingRow % PAGESIZE] = self->activelyEditingRow;
+			}
 			self->delegate->willLoseFocus();
+
 			
 			/*HWND dest = (HWND)wParam;
 			bool focusMovingOutsideGrid = true;
@@ -1557,10 +1575,13 @@ void CinchGrid::startEditing(int previous, int row, int col){
 				SetWindowSubclass(editor, DetailWndProc, i, (DWORD_PTR)this);
 				columns[i]->setEditor(editor);
 			} else {
-				delegate->editingFinished(columns[i]->getEditor(), previous, i); 
+				delegate->editingFinished(columns[i]->getEditor(), previous, i, data); 
+				rows_loaded = max(rows_loaded, previous+1);
+				page_table[previous % PAGESIZE] = previous;
+			
 			}
 			HWND editor = columns[i]->getEditor();
-			delegate->setupEditorForCell(editor, row, i);
+			delegate->setupEditorForCell(editor, row, i, data);
 			if( editingInitialized == false && previousWindow == reverseTabCapture ){
 				firstFocusedEditor = editor;
 			}

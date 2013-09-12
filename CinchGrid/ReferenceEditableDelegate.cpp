@@ -4,24 +4,11 @@
 #include <stdio.h>
 
 ReferenceEditableDelegate::ReferenceEditableDelegate(){
-	int i,j;
 	rowCount = 0;
 
-	for(i=0;i<MAX_ROWS;i++){
-		for(j=0; j<2; j++){
-			data[i][j]=NULL;
-		}
-	}
 }
 
 ReferenceEditableDelegate::~ReferenceEditableDelegate(){
-	int i,j;
-	for(i=0;i<MAX_ROWS;i++){
-		for(j=0; j<2; j++){
-			delete data[i][j];
-		}
-	}
-
 }
 
 int ReferenceEditableDelegate::totalColumns(){
@@ -40,8 +27,8 @@ int ReferenceEditableDelegate::rowHeight(){
 	return 25;
 }
 
-void ReferenceEditableDelegate::headerContent(int col, const wchar_t* &content) {
-	content = TEXT("");
+void ReferenceEditableDelegate::headerContent(int col, wstring& content) {
+	content = L"";
 }
 
 bool ReferenceEditableDelegate::stickyHeaders(){
@@ -50,10 +37,25 @@ bool ReferenceEditableDelegate::stickyHeaders(){
 
 
 int ReferenceEditableDelegate::LoadSegment(int start_row, int len, wchar_t*** data){
-	return 0;
+	int row = start_row;
+	for(int i=0; i<len; i++){
+		for(int col=0; col<totalColumns(); col++){	
+			if ( data[i][col] == nullptr ){
+				data[i][col] = new wchar_t[1];
+				data[i][col][0] = 0;
+			}
+		}
+		row++;
+	}
+	return len;
 }
 
 void ReferenceEditableDelegate::CleanupSegment(int len, wchar_t*** data){
+	for(int i=0; i<len; i++){
+		for(int col=0; col<totalColumns(); col++){
+			delete data[i][col];
+		}
+	}
 }
 
 HFONT ReferenceEditableDelegate::getFont(){
@@ -94,11 +96,12 @@ HWND ReferenceEditableDelegate::editorForColumn(int col, HWND parent, HINSTANCE 
 	
 }
 
-void ReferenceEditableDelegate::editingFinished(HWND editor, int row, int col)
+void ReferenceEditableDelegate::editingFinished(HWND editor, int row, int col, wchar_t*** data)
 {
 	delete data[row][col];
-	data[row][col] = new wchar_t[100];
-	GetWindowText(editor, data[row][col], 100);
+	int len = GetWindowTextLength(editor) + sizeof(wchar_t);
+	data[row][col] = new wchar_t[len];
+	GetWindowText(editor, data[row][col], len);
 	
 }
 
@@ -121,7 +124,7 @@ bool ReferenceEditableDelegate::allowNewColumns() {
 	return true;
 }
 
-void ReferenceEditableDelegate::setupEditorForCell(HWND editor, int row, int col){
+void ReferenceEditableDelegate::setupEditorForCell(HWND editor, int row, int col, wchar_t*** data){
 	if ( col == 0 ){
 		const wchar_t* timeStr = data[row][col];
 		if (timeStr == NULL ) return;
@@ -160,4 +163,17 @@ void ReferenceEditableDelegate::setGrid(CinchGrid* grid){
 }
 
 void ReferenceEditableDelegate::didChangeColumnWidth(int col, int newWidth){
+}
+
+bool ReferenceEditableDelegate::allowSorting(int col){
+	return false;
+}
+
+void ReferenceEditableDelegate::sortAscending(int col){
+}
+
+void ReferenceEditableDelegate::sortDescending(int col){
+}
+
+void ReferenceEditableDelegate::sortOff(int col){
 }

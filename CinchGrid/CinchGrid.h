@@ -78,10 +78,12 @@ private:
 	HPEN gridlinesPen;
 	HPEN borderlinesPen;
 	HPEN sortIndicatorPen;
+	HPEN activeCellPen;
 
 	HBRUSH solidWhiteBrush;
 	HBRUSH activeRowBrush;
 	HBRUSH sortIndicatorBrush;
+
 
 	HDC offscreenDC;
 	HBITMAP offscreenBitmap;

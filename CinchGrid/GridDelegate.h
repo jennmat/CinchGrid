@@ -36,11 +36,11 @@ public:
 
 	virtual void didSelectRow(int) = 0;
 
-	virtual void setupEditorForCell(HWND editor, int row, int col) = 0;
+	virtual void setupEditorForCell(HWND editor, int row, int col, wchar_t*** data) = 0;
 	virtual bool allowEditing(int col) = 0;
 	virtual bool allowHeaderTitleEditing(int col)=0;
 	virtual HWND editorForColumn(int, HWND parent, HINSTANCE hInst) = 0;
-	virtual void editingFinished(HWND editor, int row, int col) = 0;
+	virtual void editingFinished(HWND editor, int row, int col, wchar_t*** data) = 0;
 	virtual void willLoseFocus()=0;
 
 	virtual bool allowSorting(int col)=0;
@@ -68,7 +68,6 @@ private:
 	int rowCount;
 	int columnCount;
 	int sorts[MAX_COLUMNS];
-	wchar_t* data[MAX_ROWS][MAX_COLUMNS];
 public:
 	ReferenceDelegate();
 	int totalRows();
@@ -100,7 +99,7 @@ public:
 	bool allowHeaderTitleEditing(int);
 	void setupEditorForCell(HWND editor, int row, int col);
 	HWND editorForColumn(int, HWND parent, HINSTANCE hInst) ;
-	void editingFinished(HWND editor, int row, int col);
+	void editingFinished(HWND editor, int row, int col, wchar_t*** data);
 	void willLoseFocus();
 
 	bool allowSorting(int col);
@@ -125,7 +124,6 @@ class ReferenceEditableDelegate : public GridDelegate {
 private:
 	int rowCount;
 	int columnCount;
-	wchar_t* data[MAX_ROWS][MAX_COLUMNS];
 public:
 	ReferenceEditableDelegate();
 	~ReferenceEditableDelegate();
@@ -135,7 +133,7 @@ public:
 	int columnWidth(int column);
 	int rowHeight();
 
-	void headerContent(int, const wchar_t* &);
+	void headerContent(int, wstring &);
 
 	int LoadSegment(int start_row, int len, wchar_t*** data);
 	void CleanupSegment(int len, wchar_t*** data);
@@ -156,9 +154,9 @@ public:
 
 	bool allowEditing(int);
 	bool allowHeaderTitleEditing(int);
-	void setupEditorForCell(HWND editor, int row, int col);
+	void setupEditorForCell(HWND editor, int row, int col, wchar_t*** data);
 	HWND editorForColumn(int, HWND parent, HINSTANCE hInst) ;
-	void editingFinished(HWND editor, int row, int col);
+	void editingFinished(HWND editor, int row, int col, wchar_t*** data);
 	void willLoseFocus();
 
 	bool allowNewRows();
@@ -169,6 +167,11 @@ public:
 
 	HFONT getFont();
 	HFONT getEditFont();
+
+	bool allowSorting(int col);
+	void sortAscending(int col);
+	void sortDescending(int col);
+	void sortOff(int col);
 
 	void setGrid(CinchGrid* grid);
 };
