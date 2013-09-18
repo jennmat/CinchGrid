@@ -232,10 +232,10 @@ void CinchGrid::reloadData(){
 
 	SetScroll(hWnd);
 
-	delegate->didReloadData();
-
 	SetupAndDrawOffscreenBitmap();
 	InvalidateRect(hWnd, NULL, true);
+
+	delegate->didReloadData();
 
 }
 
