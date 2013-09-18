@@ -4,8 +4,7 @@
 #include <stdio.h>
 
 ReferenceEditableDelegate::ReferenceEditableDelegate(){
-	rowCount = 0;
-
+	rowCount = 25;
 }
 
 ReferenceEditableDelegate::~ReferenceEditableDelegate(){
@@ -41,8 +40,8 @@ int ReferenceEditableDelegate::LoadSegment(int start_row, int len, wchar_t*** da
 	for(int i=0; i<len; i++){
 		for(int col=0; col<totalColumns(); col++){	
 			if ( data[i][col] == nullptr ){
-				data[i][col] = new wchar_t[1];
-				data[i][col][0] = 0;
+				data[i][col] = new wchar_t[2];
+				wcscpy_s(data[i][col], 2, L"a");
 			}
 		}
 		row++;

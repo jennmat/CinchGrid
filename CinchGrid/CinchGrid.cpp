@@ -255,7 +255,7 @@ void CinchGrid::SetScroll(HWND hWnd)
 	} else {
 		overflowX = (overflowX && scrollOffsetX > 0) || false;
 	}
-	if ( totalHeight > client.bottom ){
+	if ( totalHeight + 50 > client.bottom ){
 		overflowY = true;
 	} else {
 		overflowY = (overflowY && scrollOffsetY > 0) || false;
