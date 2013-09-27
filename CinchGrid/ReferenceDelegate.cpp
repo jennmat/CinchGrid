@@ -222,7 +222,7 @@ void ReferenceDelegate::prepareNewRow(int row){
 	rowCount++;
 }
 
-void ReferenceDelegate::setupEditorForCell(HWND editor, int row, int col){
+void ReferenceDelegate::setupEditorForCell(HWND editor, int row, int col, wchar_t***){
 }
 
 void ReferenceDelegate::headerContextClick(HWND grid, int x, int y){

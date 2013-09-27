@@ -89,6 +89,9 @@ CinchGrid::CinchGrid(HWND h, HINSTANCE inst, GridDelegate * d){
 	data = nullptr;
 	page_table = nullptr;
 	rows_loaded = 0;
+	
+	sizeColumnCursor = LoadCursor(NULL, IDC_SIZEWE);
+
 
 	initialize();
 
@@ -348,7 +351,7 @@ void CinchGrid::DrawHeaderDragGuideline(HDC hdc, RECT client )
 	if ( draggingHeader == true ){
 		SelectObject(hdc, gridlinesPen);	
 	
-		MoveToEx(hdc, draggedXPos, 0, NULL);
+		MoveToEx(hdc, draggedXPos, delegate->rowHeight(), NULL);
 		LineTo(hdc, draggedXPos, client.bottom);
 	}
 }
@@ -861,7 +864,7 @@ LRESULT CinchGrid::OnLButtonDown(WPARAM wParam, LPARAM lParam){
 			}
 		}
 
-		if ( delegate->allowSorting(clickedColumn) == true ){
+		if ( !draggingHeader && delegate->allowSorting(clickedColumn) == true ){
 			if ( sortedColumn >= 0 && sortedColumn != clickedColumn ){
 				delegate->sortOff(sortedColumn);
 				columns[sortedColumn]->sorted = false;
@@ -937,6 +940,8 @@ LRESULT CinchGrid::OnMouseMove(WPARAM wParam, LPARAM lParam){
 	int mouseYPos = GET_Y_LPARAM(lParam); 
 		
 	if ( draggingHeader ){
+		SetCursor(sizeColumnCursor);
+
 		int accum = 0;
 		for(int i=0; i<activelyDraggedColumn; i++){
 			accum += columns[i]->getWidth();
@@ -969,7 +974,7 @@ LRESULT CinchGrid::OnMouseMove(WPARAM wParam, LPARAM lParam){
 		for(int i=0; i<numColumns; i++){
 			accum += columns[i]->getWidth();
 			if ( abs(accum-mouseXPos) < 10 ){
-				SetCursor(LoadCursor(NULL, IDC_SIZEWE));
+				SetCursor(sizeColumnCursor);
 			}
 		}
 	}
@@ -1522,7 +1527,9 @@ void CinchGrid::startHeaderTitleEditing(int col){
 		SendMessage(headerEditor, WM_SETFONT, (WPARAM)delegate->getEditFont(), 0);
 	}
 
-	SendMessage(headerEditor, WM_SETTEXT, (WPARAM)0, (LPARAM)columns[col]->getHeader().c_str());
+	if ( columns[col]->getHeader().length() > 0 ){
+		SendMessage(headerEditor, WM_SETTEXT, (WPARAM)0, (LPARAM)columns[col]->getHeader().c_str());
+	}
 
 	int x = 0;
 	int i = 0;
