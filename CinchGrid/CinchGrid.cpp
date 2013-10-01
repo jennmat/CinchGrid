@@ -143,8 +143,11 @@ void CinchGrid::setupColumns(){
 	}
 }
 
-void CinchGrid::initialize(){
-	
+void CinchGrid::initializeLayout(){
+	setupColumns();
+}
+
+void CinchGrid::initializeData(){
 	RECT client;
 	GetClientRect(hWnd, &client);
 	
@@ -154,11 +157,6 @@ void CinchGrid::initialize(){
 		CleanupData();
 	}
 
-
-	if ( numColumns == 0 ){
-		setupColumns();
-	}
-	
 	numRows = delegate->totalRows();
 
 	totalHeight = (delegate->totalRows()) * delegate->rowHeight();
@@ -191,6 +189,12 @@ void CinchGrid::initialize(){
 	memset(page_table, 0xffff, PAGESIZE);
 }
 
+void CinchGrid::initialize(){
+	initializeLayout();
+	initializeData();
+	
+}
+
 void CinchGrid::CleanupData(){
 	if ( data != nullptr ){
 		delegate->CleanupSegment(rows_loaded, cols_loaded, data);
@@ -214,6 +218,10 @@ CinchGrid::~CinchGrid(){
 	CleanupData();
 }
 
+void CinchGrid::reloadLayout(){
+	initializeLayout();
+}
+
 void CinchGrid::reloadData(){
 	stopEditing();
 
@@ -231,7 +239,7 @@ void CinchGrid::reloadData(){
 	
 
 	activeRow = -1;
-	initialize();
+	initializeData();
 
 	SetScroll(hWnd);
 

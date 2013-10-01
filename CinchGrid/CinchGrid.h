@@ -104,6 +104,8 @@ private:
 	void addColumn(wstring header, int width);
 
 	void initialize();
+	void initializeLayout();
+	void initializeData();
 	void CleanupData();
 	void setupColumns();
 
@@ -160,6 +162,7 @@ public:
 	void setDelegate(GridDelegate* d);
 	GridDelegate* getDelegate();
 	void reloadData();
+	void reloadLayout();
 	int GetActiveRow();
 	void SetActiveRow(int row, bool silent=false);
 	void ScrollRowIntoView(int row);
