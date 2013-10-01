@@ -35,7 +35,7 @@ bool ReferenceEditableDelegate::stickyHeaders(){
 }
 
 
-int ReferenceEditableDelegate::LoadSegment(int start_row, int len, wchar_t*** data){
+void ReferenceEditableDelegate::LoadSegment(int start_row, int len, wchar_t*** data, int* rows_loaded, int* cols_loaded){
 	int row = start_row;
 	for(int i=0; i<len; i++){
 		for(int col=0; col<totalColumns(); col++){	
@@ -46,12 +46,13 @@ int ReferenceEditableDelegate::LoadSegment(int start_row, int len, wchar_t*** da
 		}
 		row++;
 	}
-	return len;
+	*rows_loaded = len;
+	*cols_loaded = totalColumns();
 }
 
-void ReferenceEditableDelegate::CleanupSegment(int len, wchar_t*** data){
-	for(int i=0; i<len; i++){
-		for(int col=0; col<totalColumns(); col++){
+void ReferenceEditableDelegate::CleanupSegment(int rowCount, int columnCount, wchar_t*** data){
+	for(int i=0; i<rowCount; i++){
+		for(int col=0; col<columnCount; col++){
 			delete data[i][col];
 		}
 	}

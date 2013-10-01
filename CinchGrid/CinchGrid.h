@@ -31,6 +31,7 @@ private:
 	wchar_t ***data;
 	int* page_table;
 	int rows_loaded;
+	int cols_loaded;
 
 	HWND hWnd;
 	HINSTANCE hInst;

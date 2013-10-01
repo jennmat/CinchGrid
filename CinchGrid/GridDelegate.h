@@ -19,8 +19,8 @@ public:
 	virtual int rowHeight() = 0;
 	virtual void headerContent(int, wstring &)=0;
 
-	virtual int LoadSegment(int start_row, int len, wchar_t*** data)=0;
-	virtual void CleanupSegment(int len, wchar_t*** data)=0;
+	virtual void LoadSegment(int start_row, int len, wchar_t*** data, int*, int*)=0;
+	virtual void CleanupSegment(int rowCount, int colCount, wchar_t*** data)=0;
 
 	virtual bool stickyHeaders() = 0;
 
@@ -78,8 +78,8 @@ public:
 
 	void headerContent(int, wstring &);
 
-	int LoadSegment(int start_row, int len, wchar_t*** data);
-	void CleanupSegment(int len, wchar_t*** data);
+	void LoadSegment(int start_row, int len, wchar_t*** data, int*, int*);
+	void CleanupSegment(int rowCount, int colCount, wchar_t*** data);
 
 	bool stickyHeaders();
 	
@@ -135,8 +135,8 @@ public:
 
 	void headerContent(int, wstring &);
 
-	int LoadSegment(int start_row, int len, wchar_t*** data);
-	void CleanupSegment(int len, wchar_t*** data);
+	void LoadSegment(int start_row, int len, wchar_t*** data, int*, int*);
+	void CleanupSegment(int rowCount, int colCount, wchar_t*** data);
 
 	bool stickyHeaders();
 	

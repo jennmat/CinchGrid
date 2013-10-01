@@ -193,7 +193,7 @@ void CinchGrid::initialize(){
 
 void CinchGrid::CleanupData(){
 	if ( data != nullptr ){
-		delegate->CleanupSegment(rows_loaded, data);
+		delegate->CleanupSegment(rows_loaded, cols_loaded, data);
 	}
 
 	for(int i=0; i<PAGESIZE; i++){
@@ -612,9 +612,9 @@ void CinchGrid::DrawTextForRow(HDC hdc, RECT client, int row){
 
 		if ( page_table[row % PAGESIZE] != row ){
 			if ( data != nullptr ){
-				delegate->CleanupSegment(rows_loaded, data);
+				delegate->CleanupSegment(rows_loaded, cols_loaded, data);
 			}
-			rows_loaded = delegate->LoadSegment(row, len, data);
+			delegate->LoadSegment(row, len, data, &rows_loaded, &cols_loaded);
 			for(int i=row; i<row+PAGESIZE; i++){
 				page_table[i%PAGESIZE] = i+row;
 			}

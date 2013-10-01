@@ -53,7 +53,7 @@ bool ReferenceDelegate::stickyHeaders(){
 
 
 
-int ReferenceDelegate::LoadSegment(int start_row, int len, wchar_t*** data){
+void ReferenceDelegate::LoadSegment(int start_row, int len, wchar_t*** data, int* rows_loaded, int* cols_loaded){
 
 	bool ascending = false;
 	bool descending = false;
@@ -88,12 +88,13 @@ int ReferenceDelegate::LoadSegment(int start_row, int len, wchar_t*** data){
 		}
 		row++;
 	}
-	return len;
+	*rows_loaded = len;
+	*cols_loaded = columnCount;
 }
 
-void ReferenceDelegate::CleanupSegment(int len, wchar_t*** data){
-	for(int i=0; i<len; i++){
-		for(int col=0; col<columnCount; col++){
+void ReferenceDelegate::CleanupSegment(int rowCount, int colCount, wchar_t*** data){
+	for(int i=0; i<rowCount; i++){
+		for(int col=0; col<colCount; col++){
 			delete data[i][col];
 		}
 	}
