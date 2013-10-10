@@ -36,11 +36,9 @@ public:
 
 	virtual void didSelectRow(int) = 0;
 
-	virtual void setupEditorForCell(HWND editor, int row, int col, wchar_t*** data) = 0;
 	virtual bool allowEditing(int col) = 0;
 	virtual bool allowHeaderTitleEditing(int col)=0;
-	virtual HWND editorForColumn(int, HWND parent, HINSTANCE hInst) = 0;
-	virtual void editingFinished(HWND editor, int row, int col, wchar_t*** data) = 0;
+	virtual void editingFinished(int row, int col, wchar_t*** data) = 0;
 	virtual void willLoseFocus()=0;
 
 	virtual bool allowSorting(int col)=0;
@@ -97,9 +95,7 @@ public:
 
 	bool allowEditing(int);
 	bool allowHeaderTitleEditing(int);
-	void setupEditorForCell(HWND editor, int row, int col, wchar_t*** data);
-	HWND editorForColumn(int, HWND parent, HINSTANCE hInst) ;
-	void editingFinished(HWND editor, int row, int col, wchar_t*** data);
+	void editingFinished(int row, int col, wchar_t*** data);
 	void willLoseFocus();
 
 	bool allowSorting(int col);
@@ -154,9 +150,7 @@ public:
 
 	bool allowEditing(int);
 	bool allowHeaderTitleEditing(int);
-	void setupEditorForCell(HWND editor, int row, int col, wchar_t*** data);
-	HWND editorForColumn(int, HWND parent, HINSTANCE hInst) ;
-	void editingFinished(HWND editor, int row, int col, wchar_t*** data);
+	void editingFinished(int row, int col, wchar_t*** data);
 	void willLoseFocus();
 
 	bool allowNewRows();

@@ -11,7 +11,7 @@ ReferenceEditableDelegate::~ReferenceEditableDelegate(){
 }
 
 int ReferenceEditableDelegate::totalColumns(){
-	return 2;
+	return 4;
 }
 
 int ReferenceEditableDelegate::totalRows(){
@@ -19,11 +19,11 @@ int ReferenceEditableDelegate::totalRows(){
 }
 
 int ReferenceEditableDelegate::columnWidth(int column){
-	return 150;
+	return 85;
 }
 
 int ReferenceEditableDelegate::rowHeight(){
-	return 25;
+	return 22;
 }
 
 void ReferenceEditableDelegate::headerContent(int col, wstring& content) {
@@ -40,8 +40,9 @@ void ReferenceEditableDelegate::LoadSegment(int start_row, int len, wchar_t*** d
 	for(int i=0; i<len; i++){
 		for(int col=0; col<totalColumns(); col++){	
 			if ( data[i][col] == nullptr ){
-				data[i][col] = new wchar_t[2];
-				wcscpy_s(data[i][col], 2, L"a");
+				data[i][col] = new wchar_t[200];
+				memset(data[i][col], 0, sizeof(wchar_t)*200);
+				wcscpy_s(data[i][col], 2, L"");
 			}
 		}
 		row++;
@@ -85,31 +86,15 @@ bool ReferenceEditableDelegate::allowEditing(int col){
 	return true;
 }
 
-HWND ReferenceEditableDelegate::editorForColumn(int col, HWND parent, HINSTANCE hInst){
-	if( col == 0 ){
-		return CreateWindowEx(0, DATETIMEPICK_CLASS, TEXT("DateTime"), WS_CHILD|WS_VISIBLE|WS_TABSTOP,
-			0, 0, 0, 0, parent, NULL, hInst, NULL);
-	}
-
-	return CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP,
-		0, 0, 0, 0, parent, NULL, hInst, NULL);
-	
-}
-
-void ReferenceEditableDelegate::editingFinished(HWND editor, int row, int col, wchar_t*** data)
+void ReferenceEditableDelegate::editingFinished(int row, int col, wchar_t*** data)
 {
-	delete data[row][col];
-	int len = GetWindowTextLength(editor) + sizeof(wchar_t);
-	data[row][col] = new wchar_t[len];
-	GetWindowText(editor, data[row][col], len);
-	
 }
 
 void ReferenceEditableDelegate::willLoseFocus(){
 }
 
 bool ReferenceEditableDelegate::allowNewRows() {
-	return true;
+	return false;
 }
 
 void ReferenceEditableDelegate::prepareNewRow(int row){
@@ -124,27 +109,6 @@ bool ReferenceEditableDelegate::allowNewColumns() {
 	return true;
 }
 
-void ReferenceEditableDelegate::setupEditorForCell(HWND editor, int row, int col, wchar_t*** data){
-	if ( col == 0 ){
-		const wchar_t* timeStr = data[row][col];
-		if (timeStr == NULL ) return;
-
-		SYSTEMTIME time;
-		int month, day, year;
-		GetLocalTime(&time);
-
-		if ( wcslen(timeStr) > 0 ){
-			swscanf_s(timeStr, TEXT("%d/%d/%d"), &month, &day, &year);
-			time.wMonth = month;
-			time.wDay = day;
-			time.wYear = year;
-		}
-
-		DateTime_SetSystemtime(editor, GDT_VALID, &time);
-		return;
-	}
-	SendMessage(editor, WM_SETTEXT, (WPARAM)0, (LPARAM)data[row][col]);
-}
 
 void ReferenceEditableDelegate::headerContextClick(HWND hwnd, int x, int y){
 

@@ -126,6 +126,7 @@ bool ReferenceDelegate::rowSelection() {
 	return true;
 }
 
+
 bool ReferenceDelegate::allowEditing(int col){
 	if( col == 0 ) return false;
 	return false;
@@ -180,31 +181,9 @@ HWND CreateComboBox(HWND parent, HINSTANCE hInst){
 	return cb;
 }
 
-HWND ReferenceDelegate::editorForColumn(int col, HWND parent, HINSTANCE hInst){
-	//if ( col == 1 ){
-		//return CreateWindowEx(0, DATETIMEPICK_CLASS, TEXT("DateTime"), WS_CHILD|WS_VISIBLE|WS_TABSTOP,
-		//	0, 0, 0, 0, parent, NULL, hInst, NULL);
 
-	//} else if ( col == 2 ) {
-
-		//return CreateComboBox(parent,hInst);
-	//}
-	//if ( col == 1 ){
-		//return CreateWindowEx(0, L"BUTTON", L"", WS_CHILD|WS_VISIBLE|BS_AUTOCHECKBOX|WS_TABSTOP,
-		//0, 0, 0, 0, parent, NULL, hInst, NULL);
-
-	//}
-
-	return CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP,
-		0, 0, 0, 0, parent, NULL, hInst, NULL);
-	
-}
-
-void ReferenceDelegate::editingFinished(HWND editor, int row, int col, wchar_t*** data)
+void ReferenceDelegate::editingFinished(int row, int col, wchar_t*** data)
 {
-	data[row][col] = (wchar_t *)malloc(100*sizeof(TCHAR));
-	GetWindowText(editor, data[row][col], 100);
-
 }
 
 bool ReferenceDelegate::allowSorting(int col){
@@ -223,8 +202,6 @@ void ReferenceDelegate::prepareNewRow(int row){
 	rowCount++;
 }
 
-void ReferenceDelegate::setupEditorForCell(HWND editor, int row, int col, wchar_t***){
-}
 
 void ReferenceDelegate::headerContextClick(HWND grid, int x, int y){
 	MessageBox(NULL, L"Header right click", L"Cinch Grid", MB_OK);

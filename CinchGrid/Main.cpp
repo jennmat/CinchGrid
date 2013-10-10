@@ -59,7 +59,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	// Main message loop:
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
-		if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg) && !IsDialogMessage(gridWindow, &msg))
+		if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
@@ -139,12 +139,18 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	RECT client;
 	GetClientRect(hWnd, &client);
-	referenceDelegate = new ReferenceDelegate();
-	//referenceEditableDelegate = new ReferenceEditableDelegate();
 	
-	gridWindow = CinchGrid::CreateCinchGrid(hWnd, referenceDelegate);
-	//gridWindow = CinchGrid::CreateCinchGrid(hWnd, referenceEditableDelegate);
+	
+	//referenceDelegate = new ReferenceDelegate();
+	//gridWindow = CinchGrid::CreateCinchGrid(hWnd, referenceDelegate);
+	
+	
+	referenceEditableDelegate = new ReferenceEditableDelegate();
+	gridWindow = CinchGrid::CreateCinchGrid(hWnd, referenceEditableDelegate);
+	
+	
 	SetWindowPos(gridWindow, HWND_TOP, 0, 0, client.right, client.bottom, 0);
+	
 	ShowWindow(gridWindow, nCmdShow);
 
 	//HWND edit = CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", L"", WS_CHILD | WS_VISIBLE, client.right-50, 10, 50, 35, hWnd, NULL, hInstance, NULL);

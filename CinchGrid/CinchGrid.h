@@ -42,6 +42,10 @@ private:
 	int activelyEditingRow;
 	int activeCol;// = -1;
 
+	bool highlightActiveCell;
+	int highlightRangeLow;
+	int highlightRangeHigh;
+
 	int sortedColumn;
 
 	int scrollOffsetX;// = 0;
@@ -70,8 +74,13 @@ private:
 	bool draggingHeader;// = false;
 	bool editingInitialized;// = false;
 	int draggedXPos;// = 0;
+	bool mouseHighlighting;
+	int mouseHighlightingStartPos;
 
 	int editingHeader;
+	bool isCaretVisible;
+	bool isCaretCreated;
+	int caretPos;
 
 	int activelyDraggedColumn;// = -1;
 
@@ -79,22 +88,28 @@ private:
 	HPEN gridlinesPen;
 	HPEN borderlinesPen;
 	HPEN sortIndicatorPen;
+	HPEN activeRowPen;
 	HPEN activeCellPen;
 
+	COLORREF transparencyColor;
 	HBRUSH solidWhiteBrush;
 	HBRUSH activeRowBrush;
 	HBRUSH sortIndicatorBrush;
+	HBRUSH solidHotPinkBrush;
 
 
 	HDC offscreenDC;
+	HDC offscreenActiveDC;
 	HBITMAP offscreenBitmap;
+	HBITMAP offscreenActiveElements;
 	RECT totalArea;
 
 	HWND firstFocusedEditor;
 	HWND lastFocusedEditor;
 
 	HCURSOR sizeColumnCursor;
-
+	HCURSOR iBeamCursor;
+	HCURSOR arrowCursor;
 	
 	/*When the tab hits this control, move to the next row */
 	HWND tabCapture;
@@ -110,12 +125,6 @@ private:
 	void setupColumns();
 
 	/*Editing */
-	void startEditing(int previous, int row, int col);
-	void stopEditing();
-	void stopHeaderTitleEditing();
-	void startHeaderTitleEditing(int col);
-	void scrollEditors(int offsetX, int offsetY);
-	void adjustEditors();
 	void SetScroll(HWND hWnd);
 
 	void PageDown();
@@ -134,10 +143,20 @@ private:
 	void DrawVerticalGridlines(HDC hdc, RECT client);
 	void DrawHorizontalGridlines(HDC hdc, RECT client);
 	void DrawTextForRow(HDC hdc, RECT client, int row);
-	void DrawCellText(HDC hdc, RECT client);
+	void DrawTextForCell(HDC hdc, int row, int col);
+	void DrawRows(HDC hdc, RECT client);
 	void DrawActiveRow(HDC hdc, RECT client);
 	void ClearActiveRow(int row, HDC hdc, RECT client);
+	void RedrawCell(int row, int col);
+	void FindInsertionPoint(int mouseClickXPos, int* pos, int* xPos);
+	void EraseHighlightedRange();
+	void DrawActiveCol();
 	
+	void Cut();
+	void Copy();
+	void Paste();
+
+	void SetActiveCell(int row, int col);
 
 	LRESULT OnKeyUp(WPARAM wParam, LPARAM lParam);
 	LRESULT OnKeyDown(WPARAM wParam, LPARAM lParam);
@@ -145,13 +164,20 @@ private:
 	LRESULT OnPaint(WPARAM wParam, LPARAM lParam);
 	LRESULT OnSize(WPARAM wParam, LPARAM lParam);
 	LRESULT OnLButtonDown(WPARAM wParam, LPARAM lParam);
+	LRESULT OnLButtonDoubleClick(WPARAM wParam, LPARAM lParam);
 	LRESULT OnLButtonUp(WPARAM wParam, LPARAM lParam);
 	LRESULT OnRButtonUp(WPARAM wParam, LPARAM lParam);
 	LRESULT OnVScroll(WPARAM wParam, LPARAM lParam);
 	LRESULT OnHScroll(WPARAM wParam, LPARAM lParam);
 	LRESULT OnMouseWheel(WPARAM wParam, LPARAM lParam);
+	LRESULT OnChar(WPARAM wParam, LPARAM lParam);
 
-
+	void GetStartCursorPos(int row, int col, int* x, int* y);
+	void GetCellForMousePos(int mouseX, int mouseY, int* row, int *col);
+	void GetCellRect(int row, int col, LPRECT rect);
+	void ExpandRectToIncludeCell(int row, int col, LPRECT rect);
+	void RepositionCursor(int row, int col, int pos);
+	void Repaint(LPRECT rect);
 public:
 
 	
