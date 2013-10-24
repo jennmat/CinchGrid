@@ -645,8 +645,9 @@ void CinchGrid::DrawTextForCell(HDC hdc, int row, int col){
 			delegate->CleanupSegment(rows_loaded, cols_loaded, data);
 		}
 		delegate->LoadSegment(row, len, data, &rows_loaded, &cols_loaded);
+		int j = row;
 		for(int i=row; i<row+PAGESIZE; i++){
-			page_table[i%PAGESIZE] = i+row;
+			page_table[i%PAGESIZE] = j++;
 		}
 	}
 
@@ -758,7 +759,7 @@ void CinchGrid::DrawRows(HDC hdc, RECT client)
 	if ( windowOffsetY < 0 ){
 		int a = 1;
 	}
-	for(int row = windowOffsetY / delegate->rowHeight(); row<delegate->totalRows() && row*delegate->rowHeight() < client.bottom + windowOffsetY; row++){
+	for(int row = windowOffsetY / delegate->rowHeight(); row<delegate->totalRows() && row*delegate->rowHeight() < offscreenHeight; row++){
 		left = 0;
 		DrawTextForRow(hdc, client, row);
 	}
