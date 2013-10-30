@@ -1970,7 +1970,7 @@ void CinchGrid::Repaint(LPRECT rect){
 	int off = scrollOffsetY;
 	rect->top -= off;
 	rect->bottom -= off;
-	InvalidateRect(hWnd, rect, true);
+	InvalidateRect(hWnd, NULL, true);
 	rect->top += off;
 	rect->bottom += off;
 }
