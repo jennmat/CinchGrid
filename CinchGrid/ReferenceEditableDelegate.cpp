@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 ReferenceEditableDelegate::ReferenceEditableDelegate(){
-	rowCount = 25;
+	rowCount = 3;
 }
 
 ReferenceEditableDelegate::~ReferenceEditableDelegate(){
@@ -94,7 +94,7 @@ void ReferenceEditableDelegate::willLoseFocus(){
 }
 
 bool ReferenceEditableDelegate::allowNewRows() {
-	return false;
+	return true;
 }
 
 void ReferenceEditableDelegate::prepareNewRow(int row){
@@ -106,7 +106,7 @@ bool ReferenceEditableDelegate::allowHeaderTitleEditing(int col) {
 }
 
 bool ReferenceEditableDelegate::allowNewColumns() {
-	return true;
+	return false;
 }
 
 

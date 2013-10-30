@@ -118,12 +118,18 @@ CinchGrid::CinchGrid(HWND h, HINSTANCE inst, GridDelegate * d){
 	activeCellPen = ExtCreatePen(PS_GEOMETRIC | PS_ENDCAP_ROUND | PS_JOIN_ROUND, 1, &darkb, 0, NULL);
 	transparencyColor = RGB(255, 20, 147);
 	solidWhiteBrush = CreateSolidBrush(RGB(255,255,255));
+	inactiveBackgroundBrush = CreateSolidBrush(RGB(255,255,255));
 	solidHotPinkBrush = CreateSolidBrush(transparencyColor);
 	activeRowBrush = CreateSolidBrush(RGB(167,205,240));
 	sortIndicatorBrush = CreateSolidBrush(RGB(165,172,181));
 		
 	offscreenDC = CreateCompatibleDC(GetDC(hWnd));
 	offscreenActiveDC = CreateCompatibleDC(GetDC(hWnd));
+
+	/*WORD		wBits[] = { 0x00 };
+	HBITMAP     bmpBrush;
+	bmpBrush  = CreateBitmap(32, 32, 1, 1, wBits);
+    inactiveBackgroundBrush = CreatePatternBrush(bmpBrush);*/
 }
 
 void CinchGrid::setupColumns(){
@@ -156,6 +162,7 @@ void CinchGrid::setupColumns(){
 		if ( width != CINCH_GRID_MAXIMIZE_WIDTH ){
 			totalWidthFixedCols += width;
 		}
+
 	}
 }
 
@@ -353,7 +360,7 @@ void CinchGrid::SetupAndDrawOffscreenBitmap(){
 	totalArea.bottom = offscreenHeight;
 	totalArea.top = 0;
 	
-	int l = FillRect(offscreenDC, &totalArea, solidWhiteBrush);
+	int l = FillRect(offscreenDC, &totalArea, inactiveBackgroundBrush);
 	int rc = FillRect(offscreenActiveDC, &totalArea, solidHotPinkBrush);
 	int err = GetLastError();
 
@@ -511,8 +518,10 @@ void CinchGrid::DrawVerticalGridlines(HDC hdc, RECT client)
 {
 	
 	int bottom = offscreenHeight;
-	if ( !delegate->allowNewRows() ){
+	if ( delegate->allowNewRows() ){
 		bottom = totalArea.bottom;
+	} else {
+		bottom = delegate->rowHeight() * (delegate->totalRows()+1);
 	}
 
 	//SelectObject(hdc, borderlinesPen);
@@ -562,7 +571,9 @@ void CinchGrid::DrawHorizontalGridlines(HDC hdc, RECT client)
 		int i = windowOffsetY / client.bottom + 2;  //+2 is to skip the header, it draws it's own darker gridlines
 		int bottom = offscreenHeight;
 		if (  delegate->allowNewRows() == false ){
-			bottom = bottom+1;
+			bottom = min(offscreenHeight, delegate->rowHeight() * (delegate->totalRows() + 1)) + 1;
+		} else {
+			bottom = offscreenHeight + 1;
 		}
 		int width = totalWidth;
 		if ( autosized == true ){
@@ -1064,7 +1075,7 @@ LRESULT CinchGrid::OnLButtonDown(WPARAM wParam, LPARAM lParam){
 		clickedRow--;
 
 		if ( delegate->allowNewRows() && clickedRow >= delegate->totalRows() ){
-			int newRows = clickedRow + 1 - delegate->totalRows();
+			int newRows = clickedRow - delegate->totalRows() + 1;
 			for(int i=0; i<newRows; i++){
 				delegate->prepareNewRow(clickedRow);
 			}
@@ -1237,8 +1248,21 @@ LRESULT CinchGrid::OnPaint(WPARAM wParam, LPARAM lParam){
 	HDC          hdc;
     PAINTSTRUCT  ps;
 
+	
 	hdc = BeginPaint(hWnd, &ps);
+	
+	
 	BitBlt(hdc, ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right, ps.rcPaint.bottom, offscreenDC, ps.rcPaint.left + scrollOffsetX, ps.rcPaint.top + scrollOffsetY - windowOffsetY, SRCCOPY);
+	
+	RECT rect;
+	SelectObject(hdc, borderlinesPen);
+	GetClientRect(hWnd, &rect);
+	MoveToEx(hdc, 0, 0, NULL);
+	LineTo(hdc, rect.right-1, 0);
+	LineTo(hdc, rect.right-1, rect.bottom-1);
+	LineTo(hdc, 0, rect.bottom-1);
+	LineTo(hdc, 0, 0);
+
 	TransparentBlt(hdc, ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right, ps.rcPaint.bottom, offscreenActiveDC, ps.rcPaint.left + scrollOffsetX, ps.rcPaint.top + scrollOffsetY - windowOffsetY, ps.rcPaint.right, ps.rcPaint.bottom, transparencyColor);
 	
 	//BitBlt(hdc, ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right, ps.rcPaint.bottom, offscreenActiveDC, ps.rcPaint.left + scrollOffsetX, ps.rcPaint.top + scrollOffsetY - windowOffsetY, SRCCOPY);
@@ -1250,16 +1274,6 @@ LRESULT CinchGrid::OnPaint(WPARAM wParam, LPARAM lParam){
 	if ( delegate->stickyHeaders() ){
 		DrawHeader(hdc, ps.rcPaint, true);
 	}
-
-	RECT rect;
-	SelectObject(hdc, borderlinesPen);
-	GetClientRect(hWnd, &rect);
-	MoveToEx(hdc, 0, 0, NULL);
-	LineTo(hdc, rect.right-1, 0);
-	LineTo(hdc, rect.right-1, rect.bottom-1);
-	LineTo(hdc, 0, rect.bottom-1);
-	LineTo(hdc, 0, 0);
-
 
 	
 	/* Draws a visualization of the back buffers */
@@ -1606,8 +1620,10 @@ LRESULT CinchGrid::OnChar(WPARAM wParam, LPARAM lParam){
 	
 			if( data[activeRow][activeCol] == NULL ){
 				data[activeRow][activeCol] = new wchar_t[100];
-				wcscpy_s(data[activeRow][activeCol], 2, &c);
-				RepositionCursor(activeRow, activeCol, 0);
+				memset(data[activeRow][activeCol], 0, 100);
+				data[activeRow][activeCol][0] = c;
+				caretPos = 1;
+				RepositionCursor(activeRow, activeCol, caretPos);
 			} else {
 				wchar_t* content = data[activeRow][activeCol];
 				int i = wcslen(content) + 1;
@@ -1805,8 +1821,21 @@ LRESULT CALLBACK CinchGrid::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 void CinchGrid::DrawGridElements(HDC hdc, RECT client)
 {
 	clientWidth = client.right;
-	FillRect(offscreenDC, &totalArea, solidWhiteBrush);
+	FillRect(offscreenDC, &totalArea, inactiveBackgroundBrush);
+	int height = 0;
+	if ( delegate->allowNewRows() ){
+		height = offscreenHeight;
+	} else {
+		height = delegate->rowHeight() * (delegate->totalRows() + 1);
+	}
 
+	RECT rect;
+	rect.left = 0;
+	rect.top = 0;
+	rect.right = totalWidth;
+	rect.bottom = height;
+	FillRect(hdc, &rect, solidWhiteBrush);
+	
 	DrawHorizontalGridlines(hdc, client);
 	DrawVerticalGridlines(hdc, client);
 	DrawRows(hdc, client);
@@ -1821,7 +1850,7 @@ void CinchGrid::DrawGridElements(HDC hdc, RECT client)
 
 
 int CinchGrid::GetActiveRow(){
-	return activeRow - 1;
+	return activeRow;
 }
 
 void CinchGrid::DrawActiveCol(){
@@ -1853,9 +1882,13 @@ void CinchGrid::SetActiveCell(int row, int col){
 		RECT client;
 		GetClientRect(hWnd, &client);
 		if ( row >= 0 ){
-			int len = wcslen(data[row][col]);
+			int len = 0;
+			if ( data[row][col] != nullptr ){
+				int len = wcslen(data[row][col]);
+			}
 			RepositionCursor(row, col, len);
 			caretPos = len;
+
 		}
  		SetupWindowOffset();
 		DrawActiveCol();
@@ -1877,6 +1910,7 @@ void CinchGrid::GetCellRect(int row, int col, LPRECT rect){
 	}
 	rect->right = rect->left + columns[i]->getWidth() + 1;
 	rect->left -= 1;
+	if ( rect->left < 0 ) rect->left = 0;
 	rect->top = (row+1) * delegate->rowHeight();
 	rect->bottom = rect->top + delegate->rowHeight() + 1;
 }

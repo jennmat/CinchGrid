@@ -93,6 +93,7 @@ private:
 
 	COLORREF transparencyColor;
 	HBRUSH solidWhiteBrush;
+	HBRUSH inactiveBackgroundBrush;
 	HBRUSH activeRowBrush;
 	HBRUSH sortIndicatorBrush;
 	HBRUSH solidHotPinkBrush;

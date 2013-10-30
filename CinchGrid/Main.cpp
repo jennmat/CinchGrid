@@ -149,7 +149,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	gridWindow = CinchGrid::CreateCinchGrid(hWnd, referenceEditableDelegate);
 	
 	
-	SetWindowPos(gridWindow, HWND_TOP, 0, 0, client.right, client.bottom, 0);
+	SetWindowPos(gridWindow, HWND_TOP, 10, 10, client.right-20, client.bottom-20, 0);
 	
 	ShowWindow(gridWindow, nCmdShow);
 
