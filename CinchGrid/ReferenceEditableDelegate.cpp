@@ -42,7 +42,7 @@ void ReferenceEditableDelegate::LoadSegment(int start_row, int len, wchar_t*** d
 			if ( data[i][col] == nullptr ){
 				data[i][col] = new wchar_t[200];
 				memset(data[i][col], 0, sizeof(wchar_t)*200);
-				wcscpy_s(data[i][col], 2, L"");
+				wcscpy_s(data[i][col], 200, L"abc");
 			}
 		}
 		row++;

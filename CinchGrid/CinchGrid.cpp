@@ -1883,8 +1883,9 @@ void CinchGrid::SetActiveCell(int row, int col){
 		GetClientRect(hWnd, &client);
 		if ( row >= 0 ){
 			int len = 0;
-			if ( data[row][col] != nullptr ){
-				int len = wcslen(data[row][col]);
+			wchar_t* content = data[row][col];
+			if ( content != nullptr ){
+				len = wcslen(data[row][col]);
 			}
 			RepositionCursor(row, col, len);
 			caretPos = len;
